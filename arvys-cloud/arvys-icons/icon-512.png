@@ -1,0 +1,1 @@
+{"error":"Le service démarre… ou est momentanément indisponible.","hint":"Rechargez dans quelques secondes. La page d'installation est disponible sur /download.","detail":"InvalidHTTPResponse fetching \"http://127.0.0.1:3011/icon-512.png\". For more information, pass `verbose: true` in the second argument to fetch()"}

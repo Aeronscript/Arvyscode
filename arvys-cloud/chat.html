@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Arvys</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arvys">
+<meta name="theme-color" content="#0d0d0d">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#080808;color:#dbdbdb;font:15px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+header{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;border-bottom:1px solid #1c1c1c;background:#0b0b0b;position:sticky;top:0;z-index:5}
+.logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,#e8e8e8,#8a8a8a);display:grid;place-items:center;color:#0a0a0a;font-weight:800;font-size:14px}
+header h1{font-size:16px;color:#fff;font-weight:700;flex:1}
+select{background:#151515;color:#ddd;border:1px solid #2a2a2a;border-radius:8px;padding:6px 8px;font-size:13px}
+a.dl{color:#9a9a9a;font-size:12.5px;text-decoration:none;border:1px solid #2a2a2a;border-radius:8px;padding:6px 9px}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px 8px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word;font-size:14.5px}
+.me{align-self:flex-end;background:#26502f;color:#eafbe9;border-bottom-right-radius:5px}
+.ai{align-self:flex-start;background:#141414;border:1px solid #232323;border-bottom-left-radius:5px}
+.ai.err{background:#2a1414;border-color:#4a2020;color:#f2c4c4}
+.hint{align-self:center;color:#6a6a6a;font-size:12.5px;text-align:center;padding:18px 8px}
+form{display:flex;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:#0b0b0b;border-top:1px solid #1c1c1c}
+textarea{flex:1;background:#151515;color:#eee;border:1px solid #2a2a2a;border-radius:12px;padding:11px 13px;font:15px/1.4 inherit;resize:none;max-height:120px;outline:none}
+textarea:focus{border-color:#3a3a3a}
+button.go{background:#e8e8e8;color:#0a0a0a;border:0;border-radius:12px;width:48px;font-weight:700;font-size:15px}
+button.go:disabled{opacity:.45}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">A</div>
+  <h1>Arvys</h1>
+  <select id="model" aria-label="Modèle">
+    <option value="arvys-code">arvys-code</option>
+    <option value="arvys-flash">arvys-flash</option>
+  </select>
+  <a class="dl" href="/download.html">Installer</a>
+</header>
+<main id="log"><div class="hint">Bienvenue dans Arvys.<br>Choisissez un modèle en haut, puis écrivez.<br>Sur iPhone : Partager → « Sur l'écran d'accueil » pour le mode app réelle.</div></main>
+<form id="f">
+  <textarea id="t" rows="1" placeholder="Votre message…" autocomplete="off"></textarea>
+  <button class="go" type="submit" id="send">↑</button>
+</form>
+<script>
+const log = document.getElementById('log'), t = document.getElementById('t'),
+      f = document.getElementById('f'), send = document.getElementById('send'),
+      model = document.getElementById('model');
+const hist = [];
+function add(cls, txt){ const d=document.createElement('div'); d.className='msg '+cls; d.textContent=txt; log.appendChild(d); log.scrollTop=log.scrollHeight; return d; }
+function restore(){ try{ const s=JSON.parse(localStorage.getItem('arvys-hist')||'[]'); s.slice(-40).forEach(m=>add(m.role==='user'?'me':'ai', m.content)); s.slice(-40).forEach(m=>hist.push(m)); if(s.length) log.querySelector('.hint')?.remove(); }catch{} }
+function save(){ try{ localStorage.setItem('arvys-hist', JSON.stringify(hist.slice(-40))); }catch{} }
+restore();
+t.addEventListener('input', ()=>{ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; });
+f.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const q = t.value.trim(); if(!q || send.disabled) return;
+  log.querySelector('.hint')?.remove();
+  add('me', q); hist.push({role:'user', content:q}); save();
+  t.value=''; t.style.height='auto'; send.disabled=true;
+  const bubble = add('ai', '…');
+  let acc = '';
+  try{
+    const r = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({ model: model.value, stream:true, messages:[
+        {role:'system', content:"Tu es Arvys, un assistant IA francophone, direct et utile. Réponds en markdown léger."},
+        ...hist.slice(-16)
+      ]})
+    });
+    if(!r.ok){
+      let m = 'HTTP '+r.status;
+      try{ const j = await r.json(); m = j.error?.message || m; }catch{}
+      throw new Error(m);
+    }
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    let buf='';
+    for(;;){
+      const {done, value} = await rd.read(); if(done) break;
+      buf += dec.decode(value, {stream:true});
+      let i;
+      while((i = buf.indexOf('\n')) >= 0){
+        const line = buf.slice(0,i).trim(); buf = buf.slice(i+1);
+        if(!line.startsWith('data:')) continue;
+        const p = line.slice(5).trim();
+        if(p === '[DONE]') continue;
+        try{ const j = JSON.parse(p); const d = j.choices?.[0]?.delta?.content; if(d){ acc += d; bubble.textContent = acc; log.scrollTop = log.scrollHeight; } }catch{}
+      }
+    }
+    if(!acc) acc = '(réponse vide)';
+    bubble.textContent = acc;
+    hist.push({role:'assistant', content:acc}); save();
+  }catch(err){
+    bubble.className = 'msg ai err';
+    bubble.textContent = '⚠ ' + err.message;
+  }finally{ send.disabled=false; t.focus(); }
+});
+</script>
+</body>
+</html>

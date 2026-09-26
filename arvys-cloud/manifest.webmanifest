@@ -1,0 +1,19 @@
+{
+  "name": "Arvys Code",
+  "short_name": "Arvys",
+  "description": "Arvys Code — compagnon agentic",
+  "start_url": "/app.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080808",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "/arvys-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "arvys-code",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arvys Code — compagnon agentic",
+  "scripts": {
+    "dev": "node proxy-core.js",
+    "build": "next build",
+    "start": "node proxy-core.js",
+    "db:push": "echo '[db:push] SQLite via binaire ARVYS — rien à faire'"
+  },
+  "dependencies": {
+    "next": "16.3.6",
+    "opencode-linux-x64": "^1.18.32",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "z-ai-web-dev-sdk": "*"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "typescript": "7.0.2"
+  }
+}
