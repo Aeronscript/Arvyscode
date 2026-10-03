@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // ARVYS Code — les 2 modèles internes, servis par la passerelle locale :3002
+  // (endpoint compatible OpenAI). Copier ce fichier vers ~/.config/opencode/opencode.jsonc
+  "model": "arvys/arvys-code",
+  "small_model": "arvys/arvys-flash",
+  "autoupdate": false,
+  "provider": {
+    "arvys": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Arvys",
+      "options": {
+        "baseURL": "http://127.0.0.1:3002/v1",
+        "apiKey": "arvys-local"
+      },
+      "models": {
+        "arvys-code": {
+          "name": "Arvys Code"
+        },
+        "arvys-flash": {
+          "name": "Arvys Flash"
+        }
+      }
+    }
+  }
+}

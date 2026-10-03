@@ -2,9 +2,17 @@
 
 Agent de codage IA, terminal-native, propulsé par deux modèles internes.
 
+## Aperçu
+
+![ARVYS Code — nouvelle session](docs/screenshots/ui-hero.png)
+
+![ARVYS Code — mobile (PWA)](docs/screenshots/ui-mobile.png)
+
 ## Présentation
 
 ARVYS Code est un agent de développement qui vit dans le terminal : il lit votre code, l'écrit, le corrige et l'exécute sous vos ordres. Le moteur open-source opencode a été intégralement rebrandé et étendu avec deux modèles d'IA internes et un produit web complet — téléchargement APK Android, PWA iPhone réelle et application navigateur.
+
+Le rebranding est appliqué **à la volée par le cœur** (`proxy-core.js`) : textes, wordmarks pixel-art (héros 720×129 de l'écran « Nouvelle session », splash, logo-mark) et logos remplacés à l'octet près. Le binaire agent reste officiel et jamais modifié, pour la stabilité.
 
 ## Fonctionnalités
 
@@ -36,12 +44,24 @@ ARVYS Code (:3000)   cœur public — UI, API, ponts SSE / PTY / vocal
 ## Démarrage
 
 ```bash
-bun install
+# 1) Binaire agent (177 Mo, non versionné dans git — voir les Releases GitHub)
+mkdir -p oc-bin
+curl -L -o oc-bin/opencode-custom \
+  https://github.com/Aeronscript/Arvyscode/releases/latest/download/opencode-custom
+chmod +x oc-bin/opencode-custom
+
+# 2) Dépendances
+bun install        # ou npm install
+
+# 3) Config des 2 modèles internes
+cp config/opencode.jsonc ~/.config/opencode/opencode.jsonc
+
+# 4) Lancer
 node proxy-core.js
 # → http://localhost:3000
 ```
 
-La passerelle IA lit sa configuration dans `gateway/cf-ai.json` (non versionné) :
+Le cœur spawn et supervise lui-même l'agent (:3001) et la passerelle IA (:3002). La passerelle lit sa configuration dans `gateway/cf-ai.json` (non versionné) :
 
 ```json
 { "account_id": "...", "api_token": "..." }

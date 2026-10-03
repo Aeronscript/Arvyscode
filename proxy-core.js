@@ -451,6 +451,9 @@ const LOGO_NEEDLES = [
   ["wordmark", 'viewBox="0 0 234 42"'],
   ["mark", "data-component=logo-mark"],
   ["splash", "data-component=logo-splash"],
+  // Héros de l'écran « Nouvelle session » : gabarit 720×129 dans le chunk
+  // paresseux new-session-*.js (généré par scripts/build_hero_swap.py).
+  ["hero", 'viewBox="0 0 720 129"'],
 ];
 
 function rebrand(text, ct) {
