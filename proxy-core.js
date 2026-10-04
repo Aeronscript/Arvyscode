@@ -80,7 +80,7 @@ function keepAlive(name, cmd, args, opts = {}) {
   st.cmd = [cmd, ...args].join(" ");
   let child;
   try {
-    child = require("node:child_process").spawn(cmd, args, { cwd: opts.cwd || ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    child = require("node:child_process").spawn(cmd, args, { cwd: opts.cwd || ROOT, stdio: ["ignore", "pipe", "pipe"], env: opts.env ? { ...process.env, ...opts.env } : undefined });
   } catch (e) {
     st.lastError = e && e.message;
     log(`[${name}] spawn impossible : ${e && e.message}`);
@@ -124,6 +124,16 @@ const BIN_CANDIDATES = [
   path.join(ROOT, "public", "oc-bin", "opencode-custom"),
   path.join(ROOT, "oc-bin", "opencode-linux-x64", "bin", "opencode"),
 ];
+
+// ---------------------------------------------------------------------------
+// Agent v2 : mot de passe fixé côté spawn (OPENCODE_PASSWORD) et réinjecté
+// par le proxy sur chaque requête amont (Basic opencode:<password>). Le
+// navigateur ne voit jamais d'authentification — le cœur la porte pour lui.
+// ---------------------------------------------------------------------------
+const AGENT_PASSWORD = process.env.ARVYS_AGENT_PASSWORD || "arvys-local-agent";
+const AGENT_AUTH = "Basic " + Buffer.from(`opencode:${AGENT_PASSWORD}`).toString("base64");
+let AGENT_CONFIG_CONTENT = null;
+try { AGENT_CONFIG_CONTENT = fs.readFileSync(path.join(ROOT, "config", "opencode.jsonc"), "utf8"); } catch (e) {}
 const GW_CANDIDATES = [
   path.join(ROOT, "gateway", "arvys_zai_gateway.js"),
   path.join(ROOT, "scripts", "arvys_zai_gateway.js"),
@@ -694,6 +704,7 @@ const server = http.createServer((req, res) => {
   // Proxy vers le binaire (l'app) — rebranding + injection des shims
   // ------------------------------------------------------------------
   const headers = { ...req.headers, host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}` };
+  if (!headers.authorization) headers.authorization = AGENT_AUTH; // v2 : API protégée par mot de passe
   // corps décodés en utf8 pour le rebranding : jamais de gzip upstream
   delete headers["accept-encoding"];
   headers["accept-encoding"] = "identity";
@@ -725,16 +736,7 @@ const server = http.createServer((req, res) => {
         ur.on("end", () => {
           let body = Buffer.concat(chunks).toString("utf8");
           if (isHtml) {
-            // Shims AVANT le bundle module (le SDK capture globalThis.fetch
-            // dès l'exécution du bundle → l'override doit précéder).
-            const BRIDGE_TAG = `<script src="${BRIDGE_PATH}"></script>`;
-            const VOICE_TAG = `<script src="${VOICE_PATH}"></script>`;
-            const PTY_TAG = `<script src="${PTY_SHIM_PATH}"></script>`;
-            const modIdx = body.indexOf('<script type="module"');
-            if (modIdx !== -1) body = body.slice(0, modIdx) + BRIDGE_TAG + VOICE_TAG + PTY_TAG + body.slice(modIdx);
-            const marker = "</head>";
-            const i = body.toLowerCase().lastIndexOf(marker);
-            if (i !== -1) body = body.slice(0, i) + NUKE_TAG + body.slice(i);
+            // v2 : l'app native gère elle-même PTY/SSE/API — plus de shims v1 injectés.
             outHeaders["permissions-policy"] = "microphone=*, camera=(), geolocation=()";
           }
           body = rebrand(body, ct);
@@ -789,7 +791,7 @@ server.on("upgrade", (req, socket, head) => {
     port: UPSTREAM_PORT,
     method: req.method,
     path: req.url,
-    headers: { ...req.headers, host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}` },
+    headers: { ...req.headers, host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}`, ...(req.headers.authorization ? {} : { authorization: AGENT_AUTH }) },
   });
   up.on("upgrade", (ur, usocket, uhead) => {
     const lines = [`HTTP/1.1 101 Switching Protocols`];
@@ -828,7 +830,13 @@ server.listen(LISTEN_PORT, "0.0.0.0", () => {
   } else {
     portBusy(UPSTREAM_PORT).then((busy) => {
       if (busy) log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`);
-      else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], { cwd: path.dirname(bin) });
+      else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
+        cwd: path.dirname(bin),
+        env: {
+          OPENCODE_PASSWORD: AGENT_PASSWORD,
+          ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
+        },
+      });
     });
   }
   const gw = GW_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });

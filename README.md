@@ -12,7 +12,7 @@ Agent de codage IA, terminal-native, propulsé par deux modèles internes.
 
 ARVYS Code est un agent de développement qui vit dans le terminal : il lit votre code, l'écrit, le corrige et l'exécute sous vos ordres. Le moteur open-source opencode a été intégralement rebrandé et étendu avec deux modèles d'IA internes et un produit web complet — téléchargement APK Android, PWA iPhone réelle et application navigateur.
 
-Le rebranding est appliqué **à la volée par le cœur** (`proxy-core.js`) : textes, wordmarks pixel-art (héros 720×129 de l'écran « Nouvelle session », splash, logo-mark) et logos remplacés à l'octet près. Le binaire agent reste officiel et jamais modifié, pour la stabilité.
+Le moteur est **opencode v2 (2.0.22)**, installé via le paquet npm officiel `@opencode/cli` — nouvelle interface web native (responsive mobile, terminal PTY intégré, temps réel SSE). Le rebranding est appliqué **à la volée par le cœur** (`proxy-core.js`) : textes, titres, manifest et marques remplacés dans chaque réponse. Le binaire agent reste officiel et jamais modifié, pour la stabilité.
 
 ## Fonctionnalités
 
@@ -38,25 +38,23 @@ ARVYS Code (:3000)   cœur public — UI, API, ponts SSE / PTY / vocal
 |---|---|
 | `proxy-core.js` | Le cœur : sert l'UI, proxifie l'agent, expose les ponts |
 | `gateway/arvys_zai_gateway.js` | Passerelle des 2 modèles : chaînes de bascule, streaming, timeouts |
-| `arvys-cloud/` | Le produit web : UI complète, `/download`, `/chat`, manifest PWA, service worker, APK |
+| `arvys-cloud/` | La vitrine : `/download`, `/chat`, manifest PWA, service worker, APK (l'interface v2 est servie en direct par le cœur) |
 | `.zscripts/dev.sh` | Superviseur de démarrage (relance automatique du cœur) |
 
 ## Démarrage
 
 ```bash
-# 1) Binaire agent (177 Mo, non versionné dans git — voir les Releases GitHub)
+# 1) Dépendances — installe aussi le binaire agent v2 via @opencode/cli
+npm install        # ou bun install
+
+# 2) Binaire agent (~200 Mo, non versionné dans git)
 mkdir -p oc-bin
-curl -L -o oc-bin/opencode-custom \
-  https://github.com/Aeronscript/Arvyscode/releases/latest/download/opencode-custom
+cp node_modules/@opencode/cli-linux-x64/bin/opencode oc-bin/opencode-custom
 chmod +x oc-bin/opencode-custom
 
-# 2) Dépendances
-bun install        # ou npm install
-
-# 3) Config des 2 modèles internes
-cp config/opencode.jsonc ~/.config/opencode/opencode.jsonc
-
-# 4) Lancer
+# 3) Lancer — la config des 2 modèles internes (config/opencode.jsonc) est
+#    injectée automatiquement par le cœur, l'authentification de l'agent v2
+#    est portée par le proxy : rien d'autre à faire.
 node proxy-core.js
 # → http://localhost:3000
 ```

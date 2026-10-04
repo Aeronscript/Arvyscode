@@ -1,21 +1,2 @@
 skills/
 node_modules/
-.next/
-arvys-mirror/
-.env
-gateway/cf-ai.json
-arvys-cloud/.wrangler/
-oc-bin/
-arvys-deploy/
-recover/
-arvys-cloud/_worker.js
-arvys-cloud/wrangler.toml
-arvys-cloud/_headers
-arvys-cloud/.assetsignore
-db/
-*.log
-/tmp/
-# journal de travail local
-worklog.md
-upload/
-download/
