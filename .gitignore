@@ -19,3 +19,6 @@ db/
 worklog.md
 upload/
 download/
+
+# Sorties d outils locales (snapshots volumineux)
+tool-results/

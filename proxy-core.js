@@ -477,6 +477,25 @@ function rebrand(text, ct) {
       }
     }
   }
+  // v2 : les bundles ESM contiennent des identifiants nus (ex. installOpencode:{input:iI})
+  // et des clés i18n composées (ex. "onboarding.updateOpencode") — un remplacement
+  // aveugle y produit un identifiant avec espace (SyntaxError) : le module ne parse
+  // plus, l'app ne monte plus, la page reste noire (fond #080808/#fafafa seul rendu).
+  // En JS on ne remplace donc qu'aux frontières d'identifiants ASCII ; « $ » et « . »
+  // sont inclus du côté gauche : les vraies variables d'env affichées ($OPENCODE_*)
+  // et les accès propriété restent exacts. \w étant ASCII en JS, les chaînes visibles
+  // collées à des CJK (OpenCode是…) sont bien couvertes. Validé : node --check sur les
+  // 51 chunks v2 rebrandés = 0 erreur (scripts/scan_v2_rebrand_risk.py).
+  const isJs = ct.includes("javascript") || ct.includes("ecmascript");
+  if (isJs) {
+    if (/OpenCode Zen|OPENCODE|OpenCode|Opencode/.test(out)) {
+      out = out.replace(/(?<![\w$.])OpenCode Zen(?![\w$])/g, "Arvys Cloud");
+      out = out.replace(/(?<![\w$.])OPENCODE(?![\w$])/g, "ARVYS");
+      out = out.replace(/(?<![\w$.])OpenCode(?![\w$])/g, "Arvys Code");
+      out = out.replace(/(?<![\w$.])Opencode(?![\w$])/g, "Arvys Code");
+    }
+    return out;
+  }
   for (const [a, b] of REBRANDS) if (out.includes(a)) out = out.split(a).join(b);
   return out;
 }
