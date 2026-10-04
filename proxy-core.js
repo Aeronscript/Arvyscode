@@ -175,6 +175,22 @@ const DOWNLOAD_HTML = (() => {
   try { return fs.readFileSync(path.join(ASSETS_DIR, "pages", "download.html"), "utf8"); } catch (e) { return "<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"utf-8\"><title>Arvys Code</title></head><body><h1>Arvys Code</h1><p>Page d'installation indisponible.</p></body></html>"; }
 })();
 
+// Page de reset d'état navigateur (/?reset=1) : purge localStorage/sessionStorage,
+// caches et service workers de CETTE origine uniquement, puis retour à l'app.
+// Utile quand l'app v2 a mémorisé un état périmé (route /server/<b64> d'une
+// instance morte, requêtes figées → « Chargement » infini sans modèles).
+const RESET_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Arvys Code — réinitialisation</title><style>body{background:#080808;color:#dbdbdb;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;margin:0}main{max-width:440px;padding:24px}h1{color:#fff;font-size:22px;margin:0 0 10px}</style></head><body><main><h1>Arvys Code</h1><p>Réinitialisation de l'état local…</p></main><script>
+(function(){try{
+  try{localStorage.clear()}catch(e){}
+  try{sessionStorage.clear()}catch(e){}
+  if(window.caches&&caches.keys){caches.keys().then(function(k){k.forEach(function(x){caches.delete(x)})}).catch(function(){})}
+  if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){})}
+  if(indexedDB&&indexedDB.databases){indexedDB.databases().then(function(dbs){(dbs||[]).forEach(function(d){try{indexedDB.deleteDatabase(d.name)}catch(e){}})}).catch(function(){})}
+}catch(e){}
+setTimeout(function(){location.replace("/")},800);
+})();
+</`+`script></body></html>`;
+
 // Page d'attente (upstream pas encore prêt) : charset correct + auto-reload
 const HOLD_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta http-equiv="refresh" content="5"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Arvys Code</title><style>body{background:#080808;color:#dbdbdb;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;margin:0}main{max-width:440px;padding:24px}h1{color:#fff;font-size:22px;margin:0 0 10px}p{color:#8a8a8a;margin:6px 0}a{color:#9a9a9a}</style></head><body><main><h1>Arvys Code</h1><p>Le service démarre… ou est momentanément indisponible.</p><p>Rechargez dans quelques secondes — cette page se recharge toute seule.</p><p><a href="/download">Page d'installation</a></p></main></body></html>`;
 
@@ -707,6 +723,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Réinitialisation d'état navigateur : /?reset=1 (purge locale + retour à l'app)
+  if (u.pathname === "/" && u.searchParams.has("reset")) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
+    res.end(RESET_HTML);
+    return;
+  }
+
   // Page de téléchargement (app mobile / PWA / navigateur)
   if (u.pathname === "/download" || u.pathname === "/download/") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
@@ -850,7 +873,7 @@ server.listen(LISTEN_PORT, "0.0.0.0", () => {
     portBusy(UPSTREAM_PORT).then((busy) => {
       if (busy) log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`);
       else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
-        cwd: path.dirname(bin),
+        cwd: ROOT, // projet par défaut = racine du workspace (pas le dossier du binaire)
         env: {
           OPENCODE_PASSWORD: AGENT_PASSWORD,
           ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
