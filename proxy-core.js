@@ -556,12 +556,17 @@ function rebrand(text, ct) {
       out = out.replace(/(?<![\w$.])OpenCode(?![\w$])/g, "Arvys Code");
       out = out.replace(/(?<![\w$.])Opencode(?![\w$])/g, "Arvys Code");
     }
-    // Remplacement des liens et actions d'aide/Discord par l'animation secrète Arvys
+    // Remplacement des liens et actions d'aide/Discord par le Guide Officiel Arvys
     out = out.split("https://opencode.ai/desktop-feedback").join("https://arvys.local/secret-help");
     out = out.split("https://discord.com/invite/opencode").join("https://arvys.local/secret-help");
     out = out.split("https://discord.gg/opencode").join("https://arvys.local/secret-help");
     out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
     out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
+
+    // Injection des identifiants réels de session pour suppression et gestion complète
+    if (out.includes("var m=YO();")) {
+      out = out.replace(/var m=YO\(\);/g, 'var m=YO();try{m.setAttribute("data-session-id",e.record.session.id);m.setAttribute("data-session-title",e.record.session.title||"");}catch(_e){}');
+    }
     return out;
   }
   for (const [a, b] of REBRANDS) if (out.includes(a)) out = out.split(a).join(b);
@@ -626,6 +631,9 @@ function shouldBlockDesktop(req, u) {
     p.startsWith("/api/") ||
     p.startsWith("/v1/") ||
     p.startsWith("/apk/") ||
+    p === "/arvys-code.apk" ||
+    p === "/download/arvys-code.apk" ||
+    p === "/download/apk" ||
     p.startsWith("/arvys-icons/") ||
     p.startsWith("/assets/") ||
     p.startsWith("/_assets/") ||
@@ -700,16 +708,6 @@ const appHandler = (req, res) => {
       "Cache-Control": "no-store, must-revalidate",
     });
     res.end(DESKTOP_BLOCK_HTML);
-    return;
-  }
-
-  // 2) Cache-buster sur la racine (mobile uniquement) : chaque session mobile reçoit une URL fraîche
-  if (u.pathname === "/" && !u.search) {
-    res.writeHead(302, {
-      Location: `/?v=${Date.now()}`,
-      "Cache-Control": "no-store, must-revalidate",
-    });
-    res.end();
     return;
   }
 
@@ -871,7 +869,7 @@ const appHandler = (req, res) => {
   // Page de téléchargement (app mobile / PWA / guide Android & iOS)
   if (u.pathname === "/download" || u.pathname === "/download/") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-    res.end(DOWNLOAD_HTML);
+    res.end(readPage("download.html"));
     return;
   }
 
@@ -889,9 +887,15 @@ const appHandler = (req, res) => {
     return;
   }
 
-  // APK Capacitor
-  if (u.pathname === "/apk/arvys-code.apk" || u.pathname.startsWith("/apk/")) {
-    if (u.pathname.endsWith(".apk")) { serveApk(res); return; }
+  // APK Android (téléchargement réel direct + alias)
+  if (
+    u.pathname === "/apk/arvys-code.apk" ||
+    u.pathname === "/download/arvys-code.apk" ||
+    u.pathname === "/arvys-code.apk" ||
+    u.pathname === "/download/apk" ||
+    u.pathname.startsWith("/apk/")
+  ) {
+    if (u.pathname.endsWith(".apk") || u.pathname === "/download/apk") { serveApk(res); return; }
   }
 
   // ------------------------------------------------------------------

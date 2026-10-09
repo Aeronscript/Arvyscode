@@ -2,72 +2,440 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arvys Code — Installation</title>
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#0d0d0d">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arvys Code — Téléchargement & Installation Mobile</title>
 <link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a0b0e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Arvys Code">
 <style>
-:root{color-scheme:dark}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#080808;color:#dbdbdb;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:32px 16px}
-main{max-width:680px;width:100%}
-h1{font-size:26px;letter-spacing:.5px;color:#fff;margin-bottom:4px}
-.sub{color:#8a8a8a;margin-bottom:28px}
-.card{background:#111;border:1px solid #232323;border-radius:14px;padding:18px 20px;margin-bottom:14px}
-.card h2{font-size:16px;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.card p,.card li{color:#b9b9b9;font-size:14px}
-.card ol,.card ul{padding-left:20px;margin-top:6px}
-.card li{margin:4px 0}
-a.btn{display:inline-block;margin-top:10px;background:#e8e8e8;color:#0a0a0a;font-weight:600;padding:10px 18px;border-radius:9px;text-decoration:none;font-size:14px}
-a.btn:hover{background:#fff}
-.tag{display:inline-block;background:#1d1d1d;border:1px solid #2c2c2c;color:#9a9a9a;border-radius:99px;font-size:11px;padding:2px 9px;margin-left:8px;vertical-align:middle}
-.code{background:#181818;border:1px solid #262626;border-radius:7px;padding:1px 7px;font:12.5px ui-monospace,monospace;color:#d9d9d9}
-.note{font-size:12.5px;color:#777;margin-top:8px}
-footer{margin-top:22px;text-align:center;color:#5a5a5a;font-size:12.5px}
-footer a{color:#8a8a8a}
+:root { color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #08090d;
+  color: #dbdbdb;
+  font: 14.5px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 48px;
+}
+main { max-width: 680px; width: 100%; }
+.header-row { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.logo-badge {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: #10121a; border: 1px solid #242738;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; color: #fff; margin: 0; }
+.sub { color: #8e92a4; margin-bottom: 24px; font-size: 14.5px; }
+
+.device-badge-banner {
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: #7dd3fc;
+}
+.device-badge-banner.is-android {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.25);
+  color: #6ee7b7;
+}
+
+.card {
+  background: #101218;
+  border: 1px solid #202330;
+  border-radius: 16px;
+  padding: 22px 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  position: relative;
+  transition: border-color .2s ease;
+}
+.card.card-highlighted {
+  border-color: #38bdf8;
+  box-shadow: 0 8px 30px rgba(56, 189, 248, 0.15);
+}
+.card.card-highlighted-android {
+  border-color: #00ff88;
+  box-shadow: 0 8px 30px rgba(0, 255, 136, 0.15);
+}
+.card h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.card p, .card li { color: #b4b8c9; font-size: 13.8px; line-height: 1.55; }
+.card ol, .card ul { padding-left: 20px; margin-top: 10px; }
+.card li { margin: 8px 0; }
+.card li b { color: #fff; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.btn-primary-apk {
+  background: #00ff88;
+  color: #06110a;
+  box-shadow: 0 4px 18px rgba(0, 255, 136, 0.3);
+}
+.btn-primary-apk:hover {
+  background: #26ff9a;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 255, 136, 0.4);
+}
+.btn-primary-ios {
+  background: #38bdf8;
+  color: #04141e;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.3);
+}
+.btn-primary-ios:hover {
+  background: #5fd0fa;
+  transform: translateY(-1px);
+}
+.btn-secondary {
+  background: #181a24;
+  color: #d1d5db;
+  border: 1px solid #282c3c;
+}
+.btn-secondary:hover {
+  background: #232736;
+  color: #fff;
+}
+
+.tag {
+  display: inline-block;
+  background: #171922;
+  border: 1px solid #282c3e;
+  color: #9499ad;
+  border-radius: 99px;
+  font-size: 11px;
+  padding: 2px 10px;
+  font-weight: 600;
+}
+.tag-android { background: rgba(0, 255, 136, 0.12); border-color: rgba(0, 255, 136, 0.3); color: #00ff88; }
+.tag-ios { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; }
+.tag-lan { background: rgba(168, 85, 247, 0.12); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+
+.code {
+  background: #181a22;
+  border: 1px solid #282c3c;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #38bdf8;
+}
+.note { font-size: 12.5px; color: #767a8c; margin-top: 12px; }
+
+.qr-bridge { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 12px; }
+.qr-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+#qrcode svg, #qrcode table { display: block; }
+.qr-info { flex: 1; min-width: 220px; }
+.qr-url-pill {
+  background: #151720;
+  border: 1px solid #282c3c;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 12.5px;
+  color: #eee;
+  display: inline-block;
+  margin: 6px 0;
+  word-break: break-all;
+}
+
+.ios-step-guide {
+  background: #0d0e14;
+  border: 1px solid #222532;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+.ios-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ios-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ios-step-text { font-size: 13.5px; color: #c4c7d4; }
+.ios-step-text b { color: #fff; }
+
+.dl-status-banner {
+  display: none;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  color: #a7f3d0;
+  font-size: 13px;
+  align-items: center;
+  gap: 8px;
+}
+
+footer { margin-top: 36px; text-align: center; color: #5f6377; font-size: 13px; }
+footer a { color: #8e92a4; text-decoration: none; margin: 0 4px; }
+footer a:hover { color: #fff; }
 </style>
+<script src="/__proxy/qrcode.js"></script>
+<script src="/__proxy/pwa.js"></script>
 </head>
 <body>
 <main>
-<h1>Arvys Code</h1>
-<p class="sub">Installez l'application sur tous vos appareils — ou utilisez-la directement dans le navigateur.</p>
+<div class="header-row">
+  <div class="logo-badge">
+    <svg viewBox="0 0 512 512" width="28" height="28">
+      <rect x="142" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="370" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="370" width="76" height="76" fill="#f5f5f5"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Arvys Code</h1>
+  </div>
+</div>
+<p class="sub">Installation réelle pour Android & iPhone — environnement complet et autonome.</p>
 
-<div class="card">
-<h2>Ordinateur (PC / Mac / Linux) <span class="tag">navigateur</span></h2>
-<p>Rien à installer : ouvrez l'adresse du site, tout fonctionne (terminal, vocal, fichiers).</p>
-<p class="note">Astuce : dans Chrome/Edge, l'icône « Installer » dans la barre d'adresse transforme l'app en fenêtre dédiée.</p>
+<!-- DÉTECTION AUTOMATIQUE APPAREIL -->
+<div class="device-badge-banner" id="device-banner" style="display:none;">
+  <span id="device-banner-icon">📱</span>
+  <span id="device-banner-text">Détection de votre appareil en cours...</span>
 </div>
 
-<div class="card">
-<h2>Android (téléphone & tablette) <span class="tag">APK</span></h2>
-<ol>
-<li>Téléchargez l'APK ci-dessous.</li>
-<li>Ouvrez le fichier téléchargé ; Android demandera « autoriser les sources inconnues » pour votre navigateur → autorisez (l'APK est signé en debug, usage personnel).</li>
-<li>Installez, puis ouvrez <b>Arvys Code</b>.</li>
-<li>Au premier appel vocal : acceptez la demande d'autorisation micro.</li>
-</ol>
-<a class="btn" href="/apk/arvys-code.apk" download>Télécharger arvys-code.apk</a>
-<p class="note">Pas d'APK ? La PWA marche aussi : menu ⋮ du navigateur → « Ajouter à l'écran d'accueil ».</p>
+<!-- ANDROID (VRAI TÉLÉCHARGEMENT APK + WEBAPK) -->
+<div class="card" id="card-android">
+  <h2>Android (Téléphone & Tablette) <span class="tag tag-android">APK Réel & WebAPK</span></h2>
+  <p>Deux modes d'installation réels sont disponibles pour votre appareil Android :</p>
+  
+  <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
+    <!-- Téléchargement réel du fichier APK -->
+    <div>
+      <a class="btn btn-primary-apk" id="btn-dl-apk" href="/apk/arvys-code.apk" download="arvys-code.apk" onclick="handleApkDownload()">
+        📥 Télécharger l'APK Réel (arvys-code.apk • 4.2 Mo)
+      </a>
+      <div class="dl-status-banner" id="dl-status-banner">
+        <span>✓</span> <span>Téléchargement de <b>arvys-code.apk</b> en cours. Vérifiez votre tiroir de notifications.</span>
+      </div>
+    </div>
+
+    <!-- Installation directe WebAPK du navigateur -->
+    <div>
+      <button class="btn btn-secondary" id="btn-pwa-install" onclick="triggerPwaInstall()">
+        ⚡ Installer en WebAPK Direct (Sans téléchargement de fichier)
+      </button>
+    </div>
+  </div>
+
+  <ol style="margin-top:14px;">
+    <li><b>Installation de l'APK :</b> Touchez le fichier téléchargé dans vos notifications. Si Android vous demande d'autoriser les « Sources inconnues » pour votre navigateur, cochez <b>Autoriser</b>.</li>
+    <li><b>Application complète :</b> Arvys Code s'installe directement dans votre tiroir d'applications, avec son icône haute définition et son plein écran immersif.</li>
+    <li><b>Autorisation micro :</b> Au premier prompt vocal, acceptez l'autorisation du microphone pour coder à la voix.</li>
+  </ol>
+  <p class="note">Besoin d'aide ? Si l'autorisation micro ne s'affiche pas, désactivez les bulles de chat ou filtres d'écran superposés dans Paramètres Android.</p>
 </div>
 
-<div class="card">
-<h2>iPhone & iPad <span class="tag">PWA</span></h2>
-<ol>
-<li>Ouvrez l'adresse du site dans <b>Safari</b>.</li>
-<li>Bouton <b>Partager</b> (carré avec flèche) → <b>Sur l'écran d'accueil</b> → Ajouter.</li>
-<li>L'app apparaît en plein écran avec son icône, comme une app native.</li>
-</ol>
-<p class="note">Le micro : Réglages iOS → Safari → Micro → Autoriser. Les apps iPhone installables (.ipa) exigent un compte développeur Apple — la PWA donne la même expérience sans ce prérequis.</p>
+<!-- IPHONE & IPAD (APPLICATION AUTONOME NATIVE IOS) -->
+<div class="card" id="card-ios">
+  <h2>iPhone & iPad <span class="tag tag-ios">Application Autonome iOS</span></h2>
+  <p>Sur iOS, Apple ne permet pas d'installer des fichiers APK, mais propose l'<b>Application Autonome iOS (Standalone)</b>. Une fois ajoutée, l'application fonctionne <b>à 100% comme une vraie app native</b> sans aucune barre d'adresse ni navigation Safari :</p>
+  
+  <div class="ios-step-guide">
+    <div class="ios-step-row">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">Ouvrez cette page dans <b>Safari</b> sur votre iPhone.</div>
+    </div>
+    <div class="ios-step-row">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text">Touchez l'icône <b>Partager</b> en bas de l'écran (le carré avec une flèche vers le haut <span class="code">⎋</span>).</div>
+    </div>
+    <div class="ios-step-row">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">Faites défiler le menu et touchez <b>« Sur l'écran d'accueil »</b> (icône <span class="code">+</span>).</div>
+    </div>
+    <div class="ios-step-row">
+      <div class="ios-step-num">4</div>
+      <div class="ios-step-text">Touchez <b>« Ajouter »</b> en haut à droite.</div>
+    </div>
+    <div class="ios-step-row" style="margin-bottom:0;">
+      <div class="ios-step-num" style="background:#00ff88;color:#000;">✓</div>
+      <div class="ios-step-text"><b>Résultat :</b> L'icône officielle <b>Arvys Code</b> apparaît sur votre écran d'accueil iPhone. En la lançant, Safari s'efface complètement et l'app s'exécute en <b>plein écran autonome natif</b>.</div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;">
+    <a class="btn btn-secondary" href="/" style="font-size:13px;">Ouvrir Arvys Code maintenant</a>
+  </div>
+  <p class="note">Micro sous iOS : Si la dictée vocale ne fonctionne pas, activez Réglages de l'iPhone → Safari → Microphone → Autoriser.</p>
 </div>
 
-<div class="card">
-<h2>Vocal & superposition (Android)</h2>
-<p>Si la demande d'autorisation micro n'apparaît jamais, une appli « superposée » (filtre lumineux, bulles de chat, lecteur flottant) bloque l'écran : <b>Réglages → Applications spéciales → Affichage par-dessus</b> → désactivez ces applis, rechargez la page, réessayez.</p>
+<!-- PONT PC -> MOBILE (QR CODE) -->
+<div class="card" id="card-bridge">
+  <h2>Scanner depuis votre téléphone <span class="tag tag-lan">Pont PC → Mobile</span></h2>
+  <p>Votre ordinateur héberge le serveur local. Scannez ce QR code avec l'appareil photo de votre téléphone pour installer et lancer immédiatement l'application mobile :</p>
+  <div class="qr-bridge">
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+    <div class="qr-info">
+      <div style="font-size:12.5px;color:#888;">Adresse réseau du serveur :</div>
+      <div class="qr-url-pill" id="serverUrl">...</div>
+      <div>
+        <button class="btn btn-secondary" onclick="copyServerUrl(this)" style="margin-top:4px;padding:6px 12px;font-size:12px;">Copier l'adresse</button>
+      </div>
+      <p class="note">Votre téléphone et votre PC doivent être sur le même réseau WiFi ou connectés via Tailscale/USB.</p>
+    </div>
+  </div>
 </div>
 
-<footer><a href="/">Ouvrir l'app complète</a> · <a href="/chat.html">Chat de secours</a> · arvys.pages.dev</footer>
+<footer>
+  Arvys Code • <a href="/">Lancer l'application</a> • <a href="/__status">Statut serveur</a>
+</footer>
 </main>
+
+<script>
+var targetUrl = location.origin;
+document.getElementById("serverUrl").textContent = targetUrl;
+
+// Détection de la plateforme (Android / iOS / PC)
+(function detectPlatform() {
+  var ua = navigator.userAgent || "";
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+  var banner = document.getElementById("device-banner");
+  var bannerIcon = document.getElementById("device-banner-icon");
+  var bannerText = document.getElementById("device-banner-text");
+
+  if (isAndroid) {
+    banner.style.display = "flex";
+    banner.className = "device-badge-banner is-android";
+    bannerIcon.textContent = "🤖";
+    bannerText.innerHTML = "<b>Appareil Android détecté :</b> Téléchargez l'APK direct ci-dessous ou installez via WebAPK.";
+    document.getElementById("card-android").classList.add("card-highlighted-android");
+  } else if (isIOS) {
+    banner.style.display = "flex";
+    bannerIcon.textContent = "🍎";
+    bannerText.innerHTML = "<b>iPhone / iPad détecté :</b> Touchez <b>Partager ⎋</b> puis <b>« Sur l'écran d'accueil »</b> pour l'installer en plein écran autonome.";
+    document.getElementById("card-ios").classList.add("card-highlighted");
+  }
+
+  // Si l'URL contient ?download=apk ou ?apk=1, déclencher le téléchargement automatiquement
+  if (location.search.indexOf("download=apk") !== -1 || location.search.indexOf("apk=1") !== -1) {
+    setTimeout(function() {
+      var a = document.getElementById("btn-dl-apk");
+      if (a) a.click();
+    }, 500);
+  }
+})();
+
+function handleApkDownload() {
+  var b = document.getElementById("dl-status-banner");
+  if (b) b.style.display = "flex";
+}
+
+function renderQr() {
+  if (typeof qrcode !== "undefined") {
+    try {
+      var qr = qrcode(0, "M");
+      qr.addData(targetUrl);
+      qr.make();
+      document.getElementById("qrcode").innerHTML = qr.createSvgTag(4.5, 0);
+      return;
+    } catch (e) {}
+  }
+  setTimeout(renderQr, 100);
+}
+renderQr();
+
+function copyServerUrl(btn) {
+  navigator.clipboard.writeText(targetUrl).then(function() {
+    if (btn) {
+      var old = btn.textContent;
+      btn.textContent = "Copié !";
+      setTimeout(function() { btn.textContent = old; }, 2000);
+    }
+  }).catch(function() {});
+}
+
+function triggerPwaInstall() {
+  if (window.__arvysDeferredPrompt) {
+    window.__arvysDeferredPrompt.prompt();
+    window.__arvysDeferredPrompt.userChoice.then(function(choice) {
+      if (choice.outcome === "accepted") {
+        document.getElementById("btn-pwa-install").textContent = "✓ Application Installée";
+        document.getElementById("btn-pwa-install").disabled = true;
+      }
+      window.__arvysDeferredPrompt = null;
+    });
+  } else {
+    var b = document.getElementById("btn-pwa-install");
+    if (b) {
+      b.textContent = "Menu ⋮ de votre navigateur → « Installer l'application »";
+      setTimeout(function() { b.textContent = "⚡ Installer en WebAPK Direct (Sans téléchargement de fichier)"; }, 4500);
+    }
+  }
+}
+
+window.addEventListener("arvys-pwa-installable", function() {
+  var b = document.getElementById("btn-pwa-install");
+  if (b) {
+    b.style.borderColor = "#00ff88";
+    b.style.color = "#00ff88";
+  }
+});
+</script>
 </body>
 </html>
