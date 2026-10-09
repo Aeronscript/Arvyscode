@@ -31,8 +31,16 @@ const MODELS = ["arvys-code", "arvys-flash"];
 
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_MODELS = {
-  "arvys-code": "llama-3.3-70b-versatile",
-  "arvys-flash": "llama-3.1-8b-instant",
+  "arvys-code": [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-70b-versatile",
+    "deepseek-r1-distill-llama-70b",
+    "llama3-70b-8192"
+  ],
+  "arvys-flash": [
+    "llama-3.1-8b-instant",
+    "llama3-8b-8192"
+  ],
 };
 
 // Quota journalier (20 requêtes gratuites par jour, remise à zéro à 00:00 UTC)
@@ -223,8 +231,7 @@ async function chatCompletions(req, res) {
           },
         });
       }
-      const groqModel = GROQ_MODELS[askedModel] || GROQ_MODELS["arvys-code"];
-      return handleGroqChat(groqModel, askedModel, messages, reqBody, res);
+      return handleGroqChat(askedModel, messages, reqBody, res);
     }
 
     // Fournisseur 2 : Workers AI (secours)
@@ -331,53 +338,68 @@ function streamToClient(src, askedModel, actualModel, res) {
   pump();
 }
 
-async function handleGroqChat(groqModel, askedModel, messages, reqBody, res) {
+async function handleGroqChat(askedModel, messages, reqBody, res) {
   const isStream = !!reqBody.stream;
-  const payload = {
-    model: groqModel,
-    messages,
-    max_tokens: Math.min(parseInt(reqBody.max_tokens, 10) || 4096, 8192),
-    temperature: typeof reqBody.temperature === "number" ? reqBody.temperature : 0.6,
-    stream: isStream,
-  };
-  try {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${GROQ_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) {
-      const errText = await r.text().catch(() => "");
-      return json(res, r.status, {
-        error: { message: `Erreur Groq (${r.status}): ${errText}`, type: "api_error" },
+  const modelsToTry = GROQ_MODELS[askedModel] || GROQ_MODELS["arvys-code"];
+  let lastErrText = "";
+  let lastStatus = 502;
+
+  for (const m of modelsToTry) {
+    const payload = {
+      model: m,
+      messages,
+      max_tokens: Math.min(parseInt(reqBody.max_tokens, 10) || 4096, 8192),
+      temperature: typeof reqBody.temperature === "number" ? reqBody.temperature : 0.6,
+      stream: isStream,
+    };
+    try {
+      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GROQ_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       });
-    }
-    if (isStream) {
-      res.writeHead(200, {
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-store",
-        "Connection": "keep-alive",
-        "X-Accel-Buffering": "no",
-      });
-      const reader = r.body.getReader();
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(value);
+      if (r.ok) {
+        if (isStream) {
+          res.writeHead(200, {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-store",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+          });
+          const reader = r.body.getReader();
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+          }
+          res.end();
+          return;
+        }
+        const data = await r.json();
+        return json(res, 200, data);
+      } else {
+        const errText = await r.text().catch(() => "");
+        lastStatus = r.status;
+        lastErrText = errText;
+        if (/does not exist|not have access|model_not_found|404/i.test(errText)) {
+          console.warn(`[arvys-gateway] Groq model ${m} not available, trying fallback...`);
+          continue;
+        }
+        return json(res, r.status, {
+          error: { message: `Erreur Groq (${r.status}): ${errText}`, type: "api_error" },
+        });
       }
-      res.end();
-      return;
+    } catch (e) {
+      lastErrText = e && e.message;
     }
-    const data = await r.json();
-    return json(res, 200, data);
-  } catch (e) {
-    return json(res, 502, {
-      error: { message: `Erreur passerelle Groq: ${e && e.message}`, type: "server_error" },
-    });
   }
+
+  return json(res, lastStatus, {
+    error: { message: `Erreur Groq (tous les modèles de repli ont échoué): ${lastErrText}`, type: "api_error" },
+  });
 }
 
 const server = http.createServer((req, res) => {
