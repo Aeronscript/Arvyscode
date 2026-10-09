@@ -579,8 +579,6 @@ function rebrand(text, ct) {
     out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
     out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
 
-    // Bouton corbeille visible sur chaque session de l'Accueil + suppression confirmée
-    out = out.split("when:ik,get children(){var t=JO();return R(t,r(Gi,{class:`flex shrink-0 items-center`,placement:`bottom`,get value(){return e.language.t(`common.archive`)},get children(){return r(Hi,{\"data-action\":`home-session-archive`,variant:`ghost-muted`,size:`large`,get icon(){return r(X,{name:`archive`})},get\"aria-label\"(){return e.language.t(`common.archive`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onArchiveSession(e.record.session)}})}})),t}}").join("when:!0,get children(){var t=JO();return R(t,r(Hi,{\"data-action\":`home-session-delete`,class:`text-red-500 hover:text-red-400 p-1.5 flex items-center justify-center cursor-pointer`,size:`large`,get icon(){return r(X,{name:`trash`})},get\"aria-label\"(){return e.language.t(`common.delete`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onDeleteSession(e.server,e.record.session)}})),t}}");
 
     // Rendre l'action de suppression visible en permanence sur mobile et bureau
     out = out.split("JO=o(`<div class=\"hover-reveal absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 group-hover/session:opacity-100 focus-within:opacity-100\">`)").join("JO=o(`<div class=\"absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 z-20 opacity-90 hover:opacity-100\">`)");
