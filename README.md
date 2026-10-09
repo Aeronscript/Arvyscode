@@ -120,12 +120,28 @@ ARVYS_TLS_CERT=./cert.pem ARVYS_TLS_KEY=./key.pem node proxy-core.js
 - **Reprise automatique :** Dès le retour de la connexion Internet, les modèles `arvys-code` et `arvys-flash` se reconnectent sans nécessiter de rafraîchissement manuel.
 - **Cache sessions :** L'historique des requêtes et configurations est mis en cache dans IndexedDB pour la consultation hors réseau.
 
-## Roadmap
+## Déploiement sur Render & Configuration Groq (20 messages / jour, réinitialisation à 00h)
 
-- **Cerveau additionnel** — un troisième modèle avancé viendra compléter `arvys-code` et `arvys-flash`
-- Déploiement multi-plateformes étendu
+Pour déployer ArvysCode sur [Render](https://render.com) et configurer vos modèles avec votre clé API Groq :
+
+1. **Créer un Web Service sur Render** :
+   - Connectez votre dépôt GitHub `Aeronscript/Arvyscode`.
+   - **Build Command** : `npm install`
+   - **Start Command** : `npm start` (ou `node proxy-core.js`)
+   - **Environment** : Node.js
+
+2. **Configurer les Variables d'Environnement sur Render** :
+   Dans l'onglet **Environment** de votre service Render, ajoutez :
+   - `GROQ_API_KEY` = `votre_clé_api_groq` (ex: `gsk_...`)
+   - `PORT` = `3000` (ou laissez Render attribuer son port par défaut, le proxy s'adapte automatiquement).
+
+3. **Modèles et Quota (20 messages / 00h)** :
+   - **`arvys-code`** utilise `llama-3.3-70b-versatile` (raisonnement, architecture, refactoring).
+   - **`arvys-flash`** utilise `llama-3.1-8b-instant` (itérations rapides, questions courtes).
+   - **Quota intégré** : Le système applique par défaut une limite de **20 requêtes/messages par jour**, avec une **réinitialisation automatique à 00:00 UTC** (minuit). Si la limite est atteinte, une notification claire s'affiche. En renseignant votre `GROQ_API_KEY` personnelle, l'usage devient illimité ou géré selon votre quota Groq.
 
 ## Crédits
 
 Basé sur le projet open-source [opencode](https://github.com/sst/opencode) (MIT), rebrandé et étendu par ARVYS.
+
 
