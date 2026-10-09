@@ -131,101 +131,261 @@
     var style = document.createElement("style");
     style.id = "arvys-custom-styles";
     style.textContent = [
-      "#arvys-guide-modal { position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);opacity:0;pointer-events:none;transition:opacity .2s ease;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:16px;color:#ececec }",
-      "#arvys-guide-modal.is-open { opacity:1;pointer-events:auto }",
-      ".arvys-guide-sheet { position:relative;width:min(95vw,520px);max-height:88vh;overflow-y:auto;background:#0d0e14;border:1px solid #242738;border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.95);padding:24px 22px;display:flex;flex-direction:column;gap:15px;box-sizing:border-box }",
-      ".arvys-guide-header { display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1f2232;padding-bottom:14px }",
-      ".arvys-guide-brand { display:flex;align-items:center;gap:12px }",
-      ".arvys-guide-logo { width:28px;height:42px;flex-shrink:0 }",
-      ".arvys-guide-brand h2 { font-size:17px;font-weight:700;color:#fff;margin:0 }",
-      ".arvys-guide-brand span { font-size:11px;color:#00ff88;font-weight:600;background:rgba(0,255,136,0.1);padding:3px 8px;border-radius:99px;border:1px solid rgba(0,255,136,0.25) }",
-      ".arvys-guide-close { background:#161822;border:1px solid #2a2e40;color:#aaa;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s }",
-      ".arvys-guide-close:hover { color:#fff;background:#262a3c }",
-      ".arvys-guide-card { background:#12141c;border:1px solid #1e2230;border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px }",
-      ".arvys-guide-card-title { font-size:13.5px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px }",
-      ".arvys-guide-card-p { font-size:12.5px;color:#a4a8bc;line-height:1.55;margin:0 }",
-      ".arvys-guide-card-p b { color:#fff }",
-      ".arvys-guide-actions { display:flex;gap:10px;margin-top:6px }",
-      ".arvys-guide-btn-done { flex:1;background:#ffffff;color:#08090d;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:13.5px;cursor:pointer;text-align:center;transition:background .15s }",
-      ".arvys-guide-btn-done:hover { background:#e2e2e2 }",
-      ".arvys-guide-btn-dl { flex:1;background:#181b26;border:1px solid #2c3144;color:#38bdf8;font-weight:600;border-radius:10px;padding:12px;font-size:13px;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px }",
-      ".arvys-guide-btn-dl:hover { background:#222636;color:#fff }",
-      // Styles pour le Bouton Corbeille Rouge visible
+      // Page d'Aide & Documentation Plein Écran (Style 100% Natif ArvysCode)
+      "#arvys-help-page { position:fixed;inset:0;z-index:999999;display:none;flex-direction:column;width:100%;height:100dvh;background:var(--v2-background-bg-deep,#090a0f);color:var(--v2-text-text-base,#f4f4f5);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;overflow:hidden;box-sizing:border-box }",
+      "#arvys-help-page.is-open { display:flex !important }",
+      ".arvys-help-header { height:48px;min-height:48px;background:var(--v2-background-bg-layer-01,#111219);border-bottom:1px solid var(--v2-border-border-base,#232635);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;gap:12px;box-sizing:border-box }",
+      ".arvys-help-header-left { display:flex;align-items:center;gap:10px;min-width:0 }",
+      ".arvys-help-back-btn { display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#f4f4f5);font-size:13px;font-weight:500;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .15s ease;user-select:none }",
+      ".arvys-help-back-btn:hover { background:var(--v2-overlay-simple-overlay-hover,rgba(255,255,255,0.06));border-color:var(--v2-border-border-strong,#3b3f54) }",
+      ".arvys-help-back-btn svg { width:14px;height:14px }",
+      ".arvys-help-header-sep { width:1px;height:18px;background:var(--v2-border-border-base,#232635) }",
+      ".arvys-help-title-group { display:flex;align-items:center;gap:8px;min-width:0 }",
+      ".arvys-help-logo { width:16px;height:22px;flex-shrink:0 }",
+      ".arvys-help-title { font-size:13.5px;font-weight:550;color:var(--v2-text-text-base,#ffffff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 }",
+      ".arvys-help-badge { font-size:11px;font-weight:500;color:var(--v2-text-text-muted,#9499ad);background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);padding:2px 7px;border-radius:4px;white-space:nowrap }",
+      ".arvys-help-header-right { display:flex;align-items:center;gap:8px;flex-shrink:0 }",
+      ".arvys-help-action-btn { display:inline-flex;align-items:center;gap:6px;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#ffffff);font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:6px;text-decoration:none;cursor:pointer;transition:all .15s ease }",
+      ".arvys-help-action-btn:hover { background:var(--v2-overlay-simple-overlay-hover,#1f2231);color:#ffffff }",
+      ".arvys-help-action-btn svg { width:14px;height:14px;color:var(--v2-icon-icon-muted,#9499ad) }",
+      ".arvys-help-icon-btn { width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-muted,#9499ad);cursor:pointer;transition:all .15s ease }",
+      ".arvys-help-icon-btn:hover { background:var(--v2-overlay-simple-overlay-hover,rgba(255,255,255,0.06));color:var(--v2-text-text-base,#ffffff) }",
+      ".arvys-help-icon-btn svg { width:14px;height:14px }",
+      // Corps Défilable
+      ".arvys-help-scroll { flex:1;overflow-y:auto;padding:32px 16px 80px;display:flex;justify-content:center;-webkit-overflow-scrolling:touch;box-sizing:border-box }",
+      ".arvys-help-content { width:100%;max-width:800px;display:flex;flex-direction:column;gap:28px }",
+      ".arvys-help-section { display:flex;flex-direction:column;gap:8px }",
+      ".arvys-help-section-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--v2-text-text-muted,#8e93a7);padding-left:2px;margin:0 }",
+      // Cartes au format exact des listes Settings d'ArvysCode
+      ".arvys-help-card { background:var(--v2-background-bg-layer-01,#111219);border:1px solid var(--v2-border-border-base,#232635);border-radius:8px;overflow:hidden;display:flex;flex-direction:column }",
+      ".arvys-help-item { display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--v2-border-border-base,#232635);align-items:flex-start }",
+      ".arvys-help-item:last-child { border-bottom:none }",
+      ".arvys-help-item-icon { width:32px;height:32px;border-radius:6px;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);display:flex;align-items:center;justify-content:center;color:var(--v2-text-text-base,#ffffff);flex-shrink:0 }",
+      ".arvys-help-item-icon svg { width:16px;height:16px }",
+      ".arvys-help-item-body { flex:1;display:flex;flex-direction:column;gap:4px;min-width:0 }",
+      ".arvys-help-item-title { font-size:13.5px;font-weight:550;color:var(--v2-text-text-base,#ffffff);margin:0 }",
+      ".arvys-help-item-desc { font-size:12.5px;line-height:1.55;color:var(--v2-text-text-muted,#9ea3b5);margin:0 }",
+      ".arvys-help-item-desc b { color:var(--v2-text-text-base,#ffffff) }",
+      ".arvys-help-kbd { display:inline-block;background:var(--v2-background-bg-layer-03,#1f2231);border:1px solid var(--v2-border-border-base,#2b2f42);border-radius:4px;padding:1px 6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;color:var(--v2-text-text-base,#ffffff) }",
+      ".arvys-help-inline-btn { display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--v2-text-text-accent,#60a5fa);background:transparent;border:none;padding:0;margin-top:6px;cursor:pointer;text-decoration:underline;text-underline-offset:3px }",
+      ".arvys-help-inline-btn:hover { color:#93c5fd }",
+      // Bouton Corbeille Rouge direct
       ".arvys-session-del-btn { opacity:0.85;background:transparent;border:none;color:#ef4444;cursor:pointer;padding:6px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;transition:all .15s;flex-shrink:0;z-index:25 }",
       ".arvys-session-del-btn:hover { opacity:1;background:rgba(239,68,68,0.18);transform:scale(1.15) }",
       ".arvys-session-del-btn svg { width:16px;height:16px;pointer-events:none }",
-      // Boîte de dialogue de confirmation
-      "#arvys-confirm-modal { position:fixed;inset:0;z-index:9999999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .2s ease;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif }",
+      // Boîte de dialogue de confirmation (Style standard dialog-v2 ArvysCode)
+      "#arvys-confirm-modal { position:fixed;inset:0;z-index:9999999;display:flex;align-items:center;justify-content:center;background:var(--v2-overlay-simple-overlay-scrim,rgba(0,0,0,0.72));opacity:0;pointer-events:none;transition:opacity .18s ease;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif }",
       "#arvys-confirm-modal.is-open { opacity:1;pointer-events:auto }",
-      ".arvys-confirm-box { width:min(90vw,400px);background:#101218;border:1px solid #282c3c;border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 56px rgba(0,0,0,.95);color:#fff;text-align:center }",
-      ".arvys-confirm-title { font-size:16.5px;font-weight:700;color:#fff }",
-      ".arvys-confirm-name { font-size:13px;color:#38bdf8;background:rgba(56,189,248,0.1);padding:4px 10px;border-radius:8px;display:inline-block;margin:0 auto;word-break:break-all;border:1px solid rgba(56,189,248,0.2) }",
-      ".arvys-confirm-desc { font-size:13px;color:#9b9ea0;line-height:1.45 }",
+      ".arvys-confirm-box { width:min(92vw,410px);background:var(--v2-background-bg-layer-01,#111219);border:1px solid var(--v2-border-border-base,#232635);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--v2-elevation-overlay,0 20px 48px rgba(0,0,0,0.8));color:var(--v2-text-text-base,#ffffff) }",
+      ".arvys-confirm-title { font-size:14.5px;font-weight:550;color:var(--v2-text-text-base,#ffffff);margin:0 }",
+      ".arvys-confirm-name { font-size:12px;color:var(--v2-text-text-base,#ffffff);background:var(--v2-background-bg-layer-02,#171923);padding:4px 10px;border-radius:5px;display:inline-block;word-break:break-all;border:1px solid var(--v2-border-border-base,#232635);font-family:ui-monospace,monospace }",
+      ".arvys-confirm-desc { font-size:12.5px;color:var(--v2-text-text-muted,#9499ad);line-height:1.5;margin:0 }",
       ".arvys-confirm-actions { display:flex;gap:10px;margin-top:6px }",
-      ".arvys-confirm-cancel { flex:1;background:#1a1d26;border:1px solid #2c3040;color:#ccc;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s }",
-      ".arvys-confirm-cancel:hover { background:#242836;color:#fff }",
-      ".arvys-confirm-delete { flex:1;background:#dc2626;border:none;color:#fff;padding:11px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700;transition:background .15s;box-shadow:0 4px 14px rgba(220,38,38,0.4) }",
+      ".arvys-confirm-cancel { flex:1;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#ffffff);padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;transition:background .15s }",
+      ".arvys-confirm-cancel:hover { background:var(--v2-overlay-simple-overlay-hover,#1f2231) }",
+      ".arvys-confirm-delete { flex:1;background:var(--v2-state-fg-danger,#dc2626);border:none;color:#fff;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s }",
       ".arvys-confirm-delete:hover { background:#ef4444 }"
     ].join("\n");
     document.head.appendChild(style);
 
-    // Construction du Guide Modal
-    guideModalEl = document.createElement("div");
-    guideModalEl.id = "arvys-guide-modal";
-    guideModalEl.innerHTML = [
-      '<div class="arvys-guide-sheet">',
-      '  <div class="arvys-guide-header">',
-      '    <div class="arvys-guide-brand">',
-      '      <svg class="arvys-guide-logo" viewBox="0 0 18 30" fill="none" xmlns="http://www.w3.org/2000/svg">',
-      '        <path d="M12 20H6V12H12V20Z" fill="rgba(255,255,255,0.3)"></path>',
+    // Construction de la Vraie Page Plein Écran d'Aide & Documentation ArvysCode
+    var helpPageEl = document.createElement("div");
+    helpPageEl.id = "arvys-help-page";
+    helpPageEl.innerHTML = [
+      '<header class="arvys-help-header">',
+      '  <div class="arvys-help-header-left">',
+      '    <button class="arvys-help-back-btn" id="arvys-help-btn-back">',
+      '      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8L10 4"/></svg>',
+      '      <span>Retour</span>',
+      '    </button>',
+      '    <div class="arvys-help-header-sep"></div>',
+      '    <div class="arvys-help-title-group">',
+      '      <svg class="arvys-help-logo" viewBox="0 0 18 30" fill="none" xmlns="http://www.w3.org/2000/svg">',
+      '        <path d="M12 20H6V12H12V20Z" fill="rgba(255,255,255,0.25)"></path>',
       '        <path d="M0 0h6v6h-6ZM6 0h6v6h-6ZM12 0h6v6h-6ZM0 6h6v6h-6ZM12 6h6v6h-6ZM0 12h6v6h-6ZM6 12h6v6h-6ZM12 12h6v6h-6ZM0 18h6v6h-6ZM12 18h6v6h-6ZM0 24h6v6h-6ZM12 24h6v6h-6Z" fill="#ffffff"></path>',
       '      </svg>',
-      '      <div><h2>Arvys Code</h2><span>Guide & Centre d\'Aide</span></div>',
+      '      <h1 class="arvys-help-title">Aide & Guide ArvysCode</h1>',
+      '      <span class="arvys-help-badge">Documentation</span>',
       '    </div>',
-      '    <button class="arvys-guide-close" id="arvys-guide-btn-close">✕</button>',
       '  </div>',
-      '  <div class="arvys-guide-card">',
-      '    <div class="arvys-guide-card-title">🤖 Agent Autonome</div>',
-      '    <p class="arvys-guide-card-p">Arvys Code est votre environnement de développement autonome. Posez une question, demandez une nouvelle fonctionnalité ou signalez un bug : l\'agent analyse le projet, crée et modifie les fichiers de code, et exécute les commandes dans le terminal en direct.</p>',
+      '  <div class="arvys-help-header-right">',
+      '    <button class="arvys-help-action-btn" id="arvys-help-top-settings">',
+      '      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8h1.5M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>',
+      '      <span>Paramètres</span>',
+      '    </button>',
+      '    <a class="arvys-help-action-btn" href="/download">',
+      '      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v7.5M5 7.5l3 3 3-3M3 13.5h10"/></svg>',
+      '      <span>APK Android</span>',
+      '    </a>',
+      '    <button class="arvys-help-icon-btn" id="arvys-help-btn-close" title="Fermer">',
+      '      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4L4 12M4 4L12 12"/></svg>',
+      '    </button>',
       '  </div>',
-      '  <div class="arvys-guide-card">',
-      '    <div class="arvys-guide-card-title">⚡ Modèles IA & Clés API Personnelles</div>',
-      '    <p class="arvys-guide-card-p"><b>arvys-code :</b> Raisonnement approfondi et architecture (20 requêtes gratuites offertes chaque jour).<br><b>arvys-flash :</b> Réponses et modifications instantanées pour coder sans délai.<br><b>Clés API Personnelles :</b> Cliquez sur <i>Paramètres</i> (roue crantée ⚙️) pour renseigner vos clés Gemini, Groq, OpenAI ou Anthropic et coder sans aucune limite de quota.</p>',
+      '</header>',
+      '<main class="arvys-help-scroll">',
+      '  <div class="arvys-help-content">',
+      '    <div class="arvys-help-section">',
+      '      <h2 class="arvys-help-section-title">Agent Autonome & Développeur IA</h2>',
+      '      <div class="arvys-help-card">',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="10" height="9" rx="2"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><path d="M8 1.5v2.5M1.5 8.5h1.5M13 8.5h1.5"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Conception & Modification de code en direct</h3>',
+      '            <p class="arvys-help-item-desc">Arvys Code est votre environnement de développement autonome. Décrivez simplement une fonctionnalité, un refactoring ou un bug : l\'agent inspecte l\'arborescence, crée et met à jour les fichiers de code, et gère votre projet de bout en bout.</p>',
+      '          </div>',
+      '        </div>',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3.5 3L3 11M8 11h5"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Terminal & Flux temps réel</h3>',
+      '            <p class="arvys-help-item-desc">L\'agent exécute les commandes dans le shell en direct. Les réponses textuelles, logs de build et diffs de code sont diffusés en continu sur votre écran sans qu\'il soit nécessaire d\'actualiser la page.</p>',
+      '          </div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
+      '    <div class="arvys-help-section">',
+      '      <h2 class="arvys-help-section-title">Modèles IA & Clés Personnelles</h2>',
+      '      <div class="arvys-help-card">',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l1.8 3.8L14 6.4l-3 3 .7 4.1L8 11.6l-3.7 1.9.7-4.1-3-3 4.2-.6L8 2z"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Modèles intégrés offerts</h3>',
+      '            <p class="arvys-help-item-desc"><b>arvys-code :</b> Modèle haute intelligence pour la réflexion architecturale et le code complexe (20 requêtes quotidiennes offertes).<br><b>arvys-flash :</b> Modèle ultra-rapide pour des modifications directes instantanées.</p>',
+      '          </div>',
+      '        </div>',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="8" r="3.5"/><path d="M9.5 8h5M12.5 8v2M14.5 8v1.5"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Utilisation Illimitée avec vos clés API</h3>',
+      '            <p class="arvys-help-item-desc">Pour coder sans aucune limite de requêtes, configurez vos clés personnelles (Google Gemini, Groq, OpenAI, Anthropic) directement dans les Paramètres.</p>',
+      '            <button class="arvys-help-inline-btn" id="arvys-help-link-keys">Ouvrir la configuration des clés API dans Paramètres ➔</button>',
+      '          </div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
+      '    <div class="arvys-help-section">',
+      '      <h2 class="arvys-help-section-title">Gestion & Suppression des Sessions</h2>',
+      '      <div class="arvys-help-card">',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6 4.5V3a1 1 0 011-1h2a1 1 0 011 1v1.5M4 4.5l.7 8.5a1.5 1.5 0 001.5 1.5h3.6a1.5 1.5 0 001.5-1.5L12 4.5"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Bouton corbeille direct</h3>',
+      '            <p class="arvys-help-item-desc">Sur l\'écran d\'Accueil, chaque session affiche une corbeille rouge. Un clic ouvre une confirmation sécurisée pour purger la session et ses fichiers.</p>',
+      '          </div>',
+      '        </div>',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h12M10 4l4 4-4 4"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Geste Swipe sur mobile</h3>',
+      '            <p class="arvys-help-item-desc">Sur smartphone et tablette, glissez la session vers la droite avec votre doigt pour afficher instantanément la confirmation de suppression.</p>',
+      '          </div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
+      '    <div class="arvys-help-section">',
+      '      <h2 class="arvys-help-section-title">Application Mobile & PWA</h2>',
+      '      <div class="arvys-help-card">',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="2" width="7" height="12" rx="1.5"/><circle cx="8" cy="11.5" r=".75" fill="currentColor"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Android (Package APK officiel)</h3>',
+      '            <p class="arvys-help-item-desc">Téléchargez l\'application autonome pour Android via le bouton en haut à droite ou le lien direct pour l\'installer sur votre smartphone.</p>',
+      '          </div>',
+      '        </div>',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8M4 6l4-4 4 4M2 14h12"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">iPhone / iPad (Safari Plein Écran)</h3>',
+      '            <p class="arvys-help-item-desc">Dans Safari sur iOS, touchez le bouton Partager ➔ <b>« Sur l\'écran d\'accueil »</b> pour ouvrir ArvysCode en mode plein écran natif sans interface Safari.</p>',
+      '          </div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
+      '    <div class="arvys-help-section">',
+      '      <h2 class="arvys-help-section-title">Raccourcis Clavier & Navigation</h2>',
+      '      <div class="arvys-help-card">',
+      '        <div class="arvys-help-item">',
+      '          <div class="arvys-help-item-icon">',
+      '            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M4.5 6.5h1M7.5 6.5h1M10.5 6.5h1M5 9.5h6"/></svg>',
+      '          </div>',
+      '          <div class="arvys-help-item-body">',
+      '            <h3 class="arvys-help-item-title">Commandes rapides</h3>',
+      '            <p class="arvys-help-item-desc"><span class="arvys-help-kbd">Ctrl</span> + <span class="arvys-help-kbd">K</span> ou <span class="arvys-help-kbd">Cmd</span> + <span class="arvys-help-kbd">K</span> : Ouvrir la palette de commandes globale.<br><span class="arvys-help-kbd">Échap</span> : Revenir à l\'écran précédent ou fermer la vue actuelle.</p>',
+      '          </div>',
+      '        </div>',
+      '      </div>',
+      '    </div>',
       '  </div>',
-      '  <div class="arvys-guide-card">',
-      '    <div class="arvys-guide-card-title">🗑️ Suppression Complète de Session</div>',
-      '    <p class="arvys-guide-card-p">Sur l\'Accueil :<br>• Cliquez sur la <b>corbeille rouge 🗑️</b> visible sur chaque session.<br>• Sur mobile tactile, faites un <b>Swipe vers la droite</b> avec le doigt pour déclencher la suppression avec confirmation sécurisée.</p>',
-      '  </div>',
-      '  <div class="arvys-guide-card">',
-      '    <div class="arvys-guide-card-title">📱 Installation Mobile & PWA</div>',
-      '    <p class="arvys-guide-card-p"><b>Android :</b> Fichier APK autonome officiel disponible en téléchargement direct.<br><b>iPhone / iPad :</b> Dans Safari, Partager ⎋ ➔ « Sur l\'écran d\'accueil » pour profiter du mode natif plein écran sans barre de navigation.</p>',
-      '  </div>',
-      '  <div class="arvys-guide-actions">',
-      '    <a class="arvys-guide-btn-dl" href="/download">📥 Télécharger APK</a>',
-      '    <button class="arvys-guide-btn-done" id="arvys-guide-btn-done">Compris</button>',
-      '  </div>',
-      '</div>'
+      '</main>'
     ].join("\n");
-    document.body.appendChild(guideModalEl);
+    document.body.appendChild(helpPageEl);
 
-    function closeGuide() {
-      if (guideModalEl) guideModalEl.classList.remove("is-open");
+    function closeHelp() {
+      if (helpPageEl) helpPageEl.classList.remove("is-open");
       isGuideOpen = false;
+      document.body.style.overflow = "";
+      if (location.hash === "#help") {
+        history.replaceState(null, "", location.pathname + location.search);
+      }
     }
-    document.getElementById("arvys-guide-btn-close").addEventListener("click", closeGuide);
-    document.getElementById("arvys-guide-btn-done").addEventListener("click", closeGuide);
-    guideModalEl.addEventListener("click", function (e) {
-      if (e.target === guideModalEl) closeGuide();
-    });
+
+    function openHelpPage() {
+      if (helpPageEl) {
+        helpPageEl.classList.add("is-open");
+        isGuideOpen = true;
+        document.body.style.overflow = "hidden";
+        if (location.hash !== "#help") {
+          history.pushState({ help: true }, "", "#help");
+        }
+      }
+    }
+
+    function navigateToSettings() {
+      closeHelp();
+      var btnSettings = document.querySelector('button[name="settings"], [aria-label="settings"], [data-action="settings"]');
+      if (btnSettings) {
+        btnSettings.click();
+      } else {
+        location.href = "/settings";
+      }
+    }
+
+    document.getElementById("arvys-help-btn-back").addEventListener("click", closeHelp);
+    document.getElementById("arvys-help-btn-close").addEventListener("click", closeHelp);
+    document.getElementById("arvys-help-top-settings").addEventListener("click", navigateToSettings);
+    var linkKeys = document.getElementById("arvys-help-link-keys");
+    if (linkKeys) linkKeys.addEventListener("click", navigateToSettings);
+
     window.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && isGuideOpen) closeGuide();
+      if (e.key === "Escape" && isGuideOpen) closeHelp();
     });
 
-    function openGuideModal() {
-      if (guideModalEl) {
-        guideModalEl.classList.add("is-open");
-        isGuideOpen = true;
+    window.addEventListener("popstate", function () {
+      if (location.hash !== "#help" && isGuideOpen) {
+        closeHelp();
+      } else if (location.hash === "#help" && !isGuideOpen) {
+        openHelpPage();
       }
+    });
+
+    if (location.hash === "#help" || location.pathname === "/help") {
+      openHelpPage();
     }
 
     // Modal de confirmation de suppression
@@ -233,9 +393,9 @@
     confirmModalEl.id = "arvys-confirm-modal";
     confirmModalEl.innerHTML = [
       '<div class="arvys-confirm-box">',
-      '  <div class="arvys-confirm-title">Supprimer définitivement la session ?</div>',
-      '  <div class="arvys-confirm-name" id="arvys-confirm-session-name">Session</div>',
-      '  <div class="arvys-confirm-desc">Tous les messages, l\'historique et les données de cette session seront définitivement effacés. Cette action est irréversible.</div>',
+      '  <h3 class="arvys-confirm-title">Supprimer définitivement la session ?</h3>',
+      '  <div><span class="arvys-confirm-name" id="arvys-confirm-session-name">Session</span></div>',
+      '  <p class="arvys-confirm-desc">Tous les messages, l\'historique et les données de cette session seront définitivement effacés. Cette action est irréversible.</p>',
       '  <div class="arvys-confirm-actions">',
       '    <button class="arvys-confirm-cancel" id="arvys-confirm-btn-cancel">Annuler</button>',
       '    <button class="arvys-confirm-delete" id="arvys-confirm-btn-delete">Supprimer</button>',
@@ -399,14 +559,14 @@
     }
     setInterval(attachSessionDeleteControls, 1000);
 
-    // Définition de l'ouverture réelle
-    window.__realOpenArvysGuide = openGuideModal;
-    window.openArvysGuideModal = openGuideModal;
-    window.openArvysSecretAnimation = openGuideModal;
+    // Définition de l'ouverture réelle de la Page d'Aide ArvysCode
+    window.__realOpenArvysGuide = openHelpPage;
+    window.openArvysGuideModal = openHelpPage;
+    window.openArvysSecretAnimation = openHelpPage;
 
     if (window.__arvysPendingGuide) {
       window.__arvysPendingGuide = false;
-      openGuideModal();
+      openHelpPage();
     }
 
     // -------------------------------------------------------------------------
@@ -459,7 +619,7 @@
         e.preventDefault();
         e.stopPropagation();
         if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-        openGuideModal();
+        openHelpPage();
         return false;
       }
     }, true);
