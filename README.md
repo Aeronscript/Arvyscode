@@ -71,9 +71,54 @@ ou par les variables d'environnement équivalentes. Sans configuration, les endp
 
 | Page | Rôle |
 |---|---|
-| `/` | L'application complète (UI de l'agent) |
-| `/download` | Téléchargement de l'APK Android |
-| `/chat` | Chat de secours vers les 2 IA |
+| `/` | L'application complète (réservée aux mobiles Android & iPhone) |
+| `/download` | Guide d'installation, pont QR code PC → Mobile & téléchargement APK |
+| `/desktop-block.html` | Page d'accueil desktop invitant à utiliser OpenCode et à scanner le QR code |
+| `/offline.html` | Page de secours hors-ligne avec reprise automatique |
+| `/sw.js` | Service Worker v3 avec precache coquille et offline |
+| `/__status` | Diagnostics du serveur, de l'agent, de la passerelle et de l'IP LAN |
+
+## Installer sur Android / iPhone depuis votre réseau
+
+Arvys Code est une application **100 % conçue pour mobile** (smartphone Android et iPhone). Le PC sert de serveur hôte local. Pour installer la PWA réelle et bénéficier du mode plein écran et hors-ligne, les navigateurs modernes exigent un **contexte sécurisé** (HTTPS ou localhost).
+
+Voici les 4 options recommandées, de la plus simple à la plus avancée :
+
+### 1. Android par câble USB (`adb reverse`) — Zéro config
+Idéal pour développer ou tester sans aucun certificat ni configuration réseau :
+```bash
+# Branchez le téléphone en débogage USB
+adb reverse tcp:3000 tcp:3000
+```
+Ouvrez ensuite `http://localhost:3000` sur Chrome mobile. Le navigateur traite `localhost` comme un contexte sécurisé : le Service Worker s'active et l'installation PWA native est immédiatement disponible.
+
+### 2. Tailscale (Recommandé sans fil) — Installation partout
+La solution la plus fluide pour iPhone et Android :
+```bash
+# Activer le HTTPS automatique avec votre domaine Tailscale
+tailscale serve https / http://127.0.0.1:3000
+```
+Vous obtenez une adresse officielle `https://mon-pc.mon-domaine.ts.net` avec certificat TLS valide reconnu par iOS et Android. L'installation PWA fonctionne sur votre réseau local et même à distance en mobilité.
+
+### 3. Tunnel Cloudflare (`cloudflared`) — Accès instantané
+Générez une URL HTTPS publique sécurisée en une seule commande :
+```bash
+cloudflared tunnel --url http://127.0.0.1:3000
+```
+Scannez l'adresse HTTPS affichée sur votre téléphone pour installer la PWA.
+
+### 4. mkcert ou TLS natif du cœur (`ARVYS_TLS_CERT` / `ARVYS_TLS_KEY`)
+Générez vos propres certificats locaux avec `mkcert` et lancez le cœur directement en HTTPS :
+```bash
+ARVYS_TLS_CERT=./cert.pem ARVYS_TLS_KEY=./key.pem node proxy-core.js
+```
+
+## Mode Hors-Ligne & Supervision Réseau
+
+- **Mode local :** Lorsque le téléphone perd l'accès à Internet, la coquille et le terminal restent opérationnels sur votre réseau WiFi local.
+- **Bannière d'état :** Une pastille discrète indique si l'app est connectée ou hors ligne.
+- **Reprise automatique :** Dès le retour de la connexion Internet, les modèles `arvys-code` et `arvys-flash` se reconnectent sans nécessiter de rafraîchissement manuel.
+- **Cache sessions :** L'historique des requêtes et configurations est mis en cache dans IndexedDB pour la consultation hors réseau.
 
 ## Roadmap
 
@@ -83,3 +128,4 @@ ou par les variables d'environnement équivalentes. Sans configuration, les endp
 ## Crédits
 
 Basé sur le projet open-source [opencode](https://github.com/sst/opencode) (MIT), rebrandé et étendu par ARVYS.
+

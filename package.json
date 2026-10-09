@@ -10,8 +10,9 @@
     "db:push": "echo '[db:push] SQLite via binaire ARVYS — rien à faire'"
   },
   "dependencies": {
-    "next": "16.3.6",
     "@opencode/cli": "2.0.22",
+    "next": "16.3.6",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "z-ai-web-dev-sdk": "*"

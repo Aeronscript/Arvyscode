@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arvys Code — Conçu pour mobile</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d0d0d">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080808;color:#dbdbdb;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+.wrap{max-width:540px;width:100%;text-align:center}
+.logo{width:56px;height:56px;margin:0 auto 16px;border-radius:12px;background:#0d0d0d;border:1px solid #222;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.badge{display:inline-flex;align-items:center;gap:6px;background:#181818;border:1px solid #282828;color:#a3a3a3;font-size:12px;font-weight:500;padding:3px 12px;border-radius:99px;margin-bottom:14px}
+h1{font-size:25px;color:#fff;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+.lead{color:#9a9a9a;font-size:15px;margin-bottom:24px}
+.card{background:#101010;border:1px solid #222;border-radius:16px;padding:24px;text-align:center;margin-bottom:20px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.card p{color:#a8a8a8;font-size:14px;margin-bottom:18px;line-height:1.55}
+.card p strong{color:#fff}
+.qr-container{background:#fff;border-radius:12px;padding:12px;display:inline-block;margin:0 auto 14px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+#qrcode svg, #qrcode table, #qrcode img{display:block;margin:0 auto}
+.url-box{background:#161616;border:1px solid #282828;border-radius:8px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#eee;max-width:100%;word-break:break-all}
+.url-box button{background:#2a2a2a;border:none;color:#ddd;padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;transition:background .15s}
+.url-box button:hover{background:#3a3a3a;color:#fff}
+.btn-primary{display:inline-block;background:#f0f0f0;color:#0a0a0a;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:9px;margin-top:10px;transition:background .15s}
+.btn-primary:hover{background:#fff}
+.footer-links{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:16px;font-size:13px}
+.footer-links a{color:#777;text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:#aaa}
+.debug-link{color:#444;font-size:11.5px;cursor:pointer;margin-top:14px;display:inline-block;text-decoration:underline}
+.debug-link:hover{color:#777}
+</style>
+<script src="/__proxy/qrcode.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <svg viewBox="0 0 512 512" width="34" height="34">
+      <rect x="142" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="370" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="370" width="76" height="76" fill="#f5f5f5"/>
+    </svg>
+  </div>
+  <div class="badge">App Mobile Dédiée</div>
+  <h1>Arvys Code est conçu pour votre téléphone</h1>
+  <p class="lead">Sur PC, Mac et Linux, utilisez <strong>OpenCode</strong> (déjà disponible sur desktop).</p>
+
+  <div class="card">
+    <p>Ce poste héberge votre serveur local Arvys Code. Pour coder depuis votre iPhone ou Android, scannez le QR code ci-dessous :</p>
+    <div class="qr-container">
+      <div id="qrcode"></div>
+    </div>
+    <div>
+      <div class="url-box">
+        <span id="targetUrl">...</span>
+        <button onclick="copyUrl()">Copier</button>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <a class="btn-primary" href="/download">Guide d'installation mobile & APK</a>
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="/download">Page /download</a>
+    <span>•</span>
+    <a href="/__status">Statut du serveur</a>
+    <span>•</span>
+    <a href="https://github.com/sst/opencode" target="_blank" rel="noopener">OpenCode Desktop</a>
+  </div>
+
+  <div>
+    <span class="debug-link" onclick="forceDesktop()">Forcer l'accès sur ce navigateur (développement)</span>
+  </div>
+</div>
+
+<script>
+var targetUrl = location.origin;
+document.getElementById("targetUrl").textContent = targetUrl;
+
+function renderQr() {
+  if (typeof qrcode !== "undefined") {
+    try {
+      var qr = qrcode(0, "M");
+      qr.addData(targetUrl);
+      qr.make();
+      document.getElementById("qrcode").innerHTML = qr.createSvgTag(5, 0);
+      return;
+    } catch (e) {}
+  }
+  // Repli automatique si lib en cours de chargement
+  setTimeout(renderQr, 100);
+}
+renderQr();
+
+function copyUrl(btn) {
+  var b = btn || event.target;
+  navigator.clipboard.writeText(targetUrl).then(function() {
+    if (b) { var old = b.textContent; b.textContent = "Copié !"; setTimeout(function() { b.textContent = old; }, 2000); }
+  }).catch(function() {});
+}
+
+function forceDesktop() {
+  try {
+    localStorage.setItem("arvysAllowDesktop", "1");
+  } catch (e) {}
+  location.href = "/?desktop=1";
+}
+</script>
+</body>
+</html>

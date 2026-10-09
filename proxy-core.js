@@ -16,9 +16,11 @@
  */
 "use strict";
 const http = require("node:http");
+const https = require("node:https");
 const fs = require("node:fs");
 const path = require("node:path");
 const net = require("node:net");
+const os = require("node:os");
 
 const LISTEN_PORT = parseInt(process.env.PROXY_CORE_PORT || process.env.PORT || "3000", 10);
 const UPSTREAM_HOST = "127.0.0.1";
@@ -34,6 +36,8 @@ const EVENTS_PATH = "/__proxy/events";
 const PTY_BRIDGE = "/__ptybridge";
 const PTY_SHIM_PATH = PTY_BRIDGE + "/shim.js";
 const NUKE_PATH = "/__proxy/nuke.js";
+const PWA_PATH = "/__proxy/pwa.js";
+const QRCODE_PATH = "/__proxy/qrcode.js";
 
 // ---------------------------------------------------------------------------
 // Journal annulaire + stats de spawn (diagnostics /__status)
@@ -119,6 +123,12 @@ function keepAlive(name, cmd, args, opts = {}) {
 // Candidats : binaire, passerelle, assets, shims, APK
 // ---------------------------------------------------------------------------
 const BIN_CANDIDATES = [
+  path.join(ROOT, "node_modules", "@opencode", "cli-linux-x64", "bin", "opencode"),
+  path.join(ROOT, "node_modules", "@opencode", "cli-linux-x64-musl", "bin", "opencode"),
+  path.join(ROOT, "node_modules", "@opencode", "cli-linux-x64-baseline", "bin", "opencode"),
+  path.join(ROOT, "node_modules", "@opencode", "cli-linux-x64-baseline-musl", "bin", "opencode"),
+  path.join(ROOT, "node_modules", "@opencode", "cli", "bin", "opencode"),
+  path.join(ROOT, "node_modules", ".bin", "opencode"),
   path.join(ROOT, "bin", "arvys"),
   path.join(ROOT, "oc-bin", "opencode-custom"),
   path.join(ROOT, "public", "oc-bin", "opencode-custom"),
@@ -166,14 +176,42 @@ function readShim(name) {
 const BRIDGE_JS = readShim("bridge.js");
 const VOICE_JS = readShim("voice.js");
 const PTY_SHIM_JS = readShim("pty-shim.js");
-const SW_STUB = readShim("sw.js");
+const PWA_JS = readShim("pwa.js");
+const SW_JS = (() => {
+  try { return fs.readFileSync(path.join(ASSETS_DIR, "sw.js"), "utf8"); } catch (e) { return readShim("sw.js"); }
+})();
+const QRCODE_JS = (() => {
+  try { return fs.readFileSync(path.join(ASSETS_DIR, "qrcode.js"), "utf8"); } catch (e) { return ""; }
+})();
 const NUKE_JS = `(function(){try{if(window.__ocNuke)return;window.__ocNuke=1;
 if(window.caches&&caches.keys){caches.keys().then(function(k){k.forEach(function(x){caches.delete(x)})}).catch(function(){})}
 if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister()})}).catch(function(){})}
 }catch(e){}})();`;
-const DOWNLOAD_HTML = (() => {
-  try { return fs.readFileSync(path.join(ASSETS_DIR, "pages", "download.html"), "utf8"); } catch (e) { return "<!DOCTYPE html><html lang=\"fr\"><head><meta charset=\"utf-8\"><title>Arvys Code</title></head><body><h1>Arvys Code</h1><p>Page d'installation indisponible.</p></body></html>"; }
-})();
+
+function readPage(name) {
+  try { return fs.readFileSync(path.join(ASSETS_DIR, "pages", name), "utf8"); } catch (e) {
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Arvys Code</title></head><body><h1>Arvys Code</h1><p>${name} indisponible.</p></body></html>`;
+  }
+}
+const DOWNLOAD_HTML = readPage("download.html");
+const OFFLINE_HTML = readPage("offline.html");
+const DESKTOP_BLOCK_HTML = readPage("desktop-block.html");
+
+function getLanIp() {
+  try {
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch (e) {}
+  return "127.0.0.1";
+}
+const LAN_IP = getLanIp();
+const LAN_URL = `http://${LAN_IP}:${LISTEN_PORT}`;
 
 // Page de reset d'état navigateur (/?reset=1) : purge localStorage/sessionStorage,
 // caches et service workers de CETTE origine uniquement, puis retour à l'app.
@@ -331,7 +369,12 @@ function ptyOpen(req, res, raw) {
   const target = `ws://${UPSTREAM_HOST}:${UPSTREAM_PORT}${u.pathname}${u.search}`;
   let ws;
   try {
-    ws = new WebSocket(target); // global : Node >= 22 / Bun
+    ws = new WebSocket(target, {
+      headers: {
+        Authorization: AGENT_AUTH,
+        Host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}`,
+      },
+    });
     if ("binaryType" in ws) ws.binaryType = "arraybuffer";
   } catch (e) {
     ptyBridges.delete(id);
@@ -340,6 +383,9 @@ function ptyOpen(req, res, raw) {
     return;
   }
   b.ws = ws;
+  ws.onerror = (e) => {
+    b.lastError = (e && e.message) || "ws error";
+  };
   ws.onopen = () => {
     log(`[ptybridge] flux ouvert ${id} → ${u.pathname}`);
     const ob = b.outbox.splice(0);
@@ -510,13 +556,22 @@ function rebrand(text, ct) {
       out = out.replace(/(?<![\w$.])OpenCode(?![\w$])/g, "Arvys Code");
       out = out.replace(/(?<![\w$.])Opencode(?![\w$])/g, "Arvys Code");
     }
+    // Remplacement des liens et actions d'aide/Discord par l'animation secrète Arvys
+    out = out.split("https://opencode.ai/desktop-feedback").join("https://arvys.local/secret-help");
+    out = out.split("https://discord.com/invite/opencode").join("https://arvys.local/secret-help");
+    out = out.split("https://discord.gg/opencode").join("https://arvys.local/secret-help");
+    out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
+    out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
     return out;
   }
   for (const [a, b] of REBRANDS) if (out.includes(a)) out = out.split(a).join(b);
+  out = out.split("https://opencode.ai/desktop-feedback").join("https://arvys.local/secret-help");
+  out = out.split("https://discord.com/invite/opencode").join("https://arvys.local/secret-help");
+  out = out.split("https://discord.gg/opencode").join("https://arvys.local/secret-help");
+  out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
+  out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
   return out;
 }
-
-const NUKE_TAG = `<script src="${NUKE_PATH}"></script>`;
 
 // ---------------------------------------------------------------------------
 // Assets ARVYS + APK
@@ -527,11 +582,65 @@ const ARVYS_ICON_ROUTES = {
   "/manifest.json": "manifest.json",
   "/icon-192.png": "icon-192.png",
   "/icon-512.png": "icon-512.png",
+  "/icon-512-maskable.png": "icon-512-maskable.png",
   "/icon.svg": "icon.svg",
   "/wordmark-inline.svg": "wordmark-inline.svg",
   "/mark-inline.svg": "mark-inline.svg",
   "/wordmark.svg": "wordmark.svg",
 };
+
+// ---------------------------------------------------------------------------
+// Filtrage Mobile & Blocage Desktop (Travail C)
+// Seuls iPhone et Android ont accès à l'application. Sur desktop, page de
+// blocage élégante renvoyant vers OpenCode avec QR code de connexion LAN.
+// ---------------------------------------------------------------------------
+function isMobileUA(ua) {
+  if (!ua) return false;
+  return /iPhone|iPad|iPod|Android.*Mobile|Mobile.*Android|Windows Phone/i.test(ua);
+}
+
+function shouldBlockDesktop(req, u) {
+  // Override debug (Travail C4) : ?desktop=1 ou cookie arvysAllowDesktop=1
+  if (u.searchParams.has("desktop") || u.searchParams.get("desktop") === "1") return false;
+  const cookie = String(req.headers.cookie || "");
+  if (cookie.includes("arvysAllowDesktop=1")) return false;
+
+  const p = u.pathname;
+  // Exceptions autorisées pour un PC : installation, statut, SW, assets, API
+  if (
+    p === "/download" ||
+    p === "/download/" ||
+    p === "/desktop-block.html" ||
+    p === "/offline.html" ||
+    p === "/sw.js" ||
+    p === "/__status" ||
+    p === "/__proxy/nuke.js" ||
+    p === BRIDGE_PATH ||
+    p === VOICE_PATH ||
+    p === PTY_SHIM_PATH ||
+    p === PWA_PATH ||
+    p === QRCODE_PATH ||
+    p.startsWith("/__ptybridge") ||
+    p === EVENTS_PATH ||
+    p === ASR_PATH ||
+    p.startsWith("/api/") ||
+    p.startsWith("/v1/") ||
+    p.startsWith("/apk/") ||
+    p.startsWith("/arvys-icons/") ||
+    p.startsWith("/assets/") ||
+    p.startsWith("/_assets/") ||
+    ARVYS_ICON_ROUTES[p]
+  ) {
+    return false;
+  }
+
+  // Si User-Agent non mobile, bloquer l'accès à l'application (/, /chat, /session, etc.)
+  const ua = String(req.headers["user-agent"] || "");
+  if (!isMobileUA(ua)) {
+    return true;
+  }
+  return false;
+}
 
 function contentTypeOf(name) {
   const ext = path.extname(name).toLowerCase();
@@ -579,11 +688,22 @@ function serveApk(res) {
 }
 
 // ---------------------------------------------------------------------------
-// Serveur principal
+// Gestionnaire applicatif principal
 // ---------------------------------------------------------------------------
-const server = http.createServer((req, res) => {
-  // 1) Cache-buster sur la racine : chaque ouverture de l'app reçoit une URL unique
+const appHandler = (req, res) => {
   const u = new URL(req.url, "http://x");
+
+  // 1) Contrôle d'accès Mobile / Blocage Desktop (Travail C)
+  if (shouldBlockDesktop(req, u)) {
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, must-revalidate",
+    });
+    res.end(DESKTOP_BLOCK_HTML);
+    return;
+  }
+
+  // 2) Cache-buster sur la racine (mobile uniquement) : chaque session mobile reçoit une URL fraîche
   if (u.pathname === "/" && !u.search) {
     res.writeHead(302, {
       Location: `/?v=${Date.now()}`,
@@ -593,7 +713,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Diagnostics internes (aucun secret : existence de fichiers, ports, journaux)
+  // Diagnostics internes (aucun secret : existence de fichiers, ports, journaux, LAN)
   if (u.pathname === "/__status") {
     const stat = (p) => {
       try {
@@ -611,6 +731,12 @@ const server = http.createServer((req, res) => {
       cwd: process.cwd(),
       root: ROOT,
       listen: LISTEN_PORT,
+      lan: {
+        ip: LAN_IP,
+        url: LAN_URL,
+        host: process.env.ARVYS_LAN === "0" ? "127.0.0.1" : "0.0.0.0",
+        enabled: true,
+      },
       upstream: { port: UPSTREAM_PORT },
       gateway: { port: GATEWAY_PORT },
       binaries: BIN_CANDIDATES.map((p) => ({ path: p, ...stat(p) })),
@@ -621,6 +747,7 @@ const server = http.createServer((req, res) => {
         favicon: stat(path.join(ASSETS_DIR, "favicon.ico")),
         icon512: stat(path.join(ASSETS_DIR, "icon-512.png")),
         shims: stat(path.join(SHIMS_DIR, "bridge.js")),
+        sw: stat(path.join(ASSETS_DIR, "sw.js")),
       },
       build_id: (() => { try { return fs.readFileSync(path.join(ROOT, ".next", "BUILD_ID"), "utf8").trim(); } catch (e) { return null; } })(),
       spawn: SPAWN_STATS,
@@ -629,6 +756,7 @@ const server = http.createServer((req, res) => {
         oc_port: process.env.OC_PORT || null,
         gateway_port: process.env.GATEWAY_PORT || null,
         core_port: process.env.PROXY_CORE_PORT || null,
+        lan: process.env.ARVYS_LAN || null,
       },
       pty_open: ptyBridges.size,
       log: LOG_RING.slice(-60),
@@ -648,7 +776,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Script de purge servi par le proxy même (CSP 'self' l'autorise)
+  // Script de purge (utilisé uniquement sur /?reset=1)
   if (u.pathname === NUKE_PATH) {
     res.writeHead(200, {
       "Content-Type": "application/javascript; charset=utf-8",
@@ -658,17 +786,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // STUB service worker : désamorce le precache Workbox et se désenregistre.
+  // VRAI SERVICE WORKER v3 (Travail A) — servi en no-store
   if (u.pathname === "/sw.js") {
     res.writeHead(200, {
       "Content-Type": "application/javascript; charset=utf-8",
       "Cache-Control": "no-store, must-revalidate",
     });
-    res.end(SW_STUB);
+    res.end(SW_JS);
     return;
   }
 
-  // Shims navigateur (ponts SSE / vocal / terminal)
+  // Shims navigateur (ponts SSE / vocal / terminal / pwa / qrcode)
   if (u.pathname === BRIDGE_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
     res.end(BRIDGE_JS);
@@ -683,6 +811,16 @@ const server = http.createServer((req, res) => {
   if (u.pathname === PTY_SHIM_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
     res.end(PTY_SHIM_JS);
+    return;
+  }
+  if (u.pathname === PWA_PATH) {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
+    res.end(PWA_JS);
+    return;
+  }
+  if (u.pathname === QRCODE_PATH) {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
+    res.end(QRCODE_JS);
     return;
   }
 
@@ -730,10 +868,24 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Page de téléchargement (app mobile / PWA / navigateur)
+  // Page de téléchargement (app mobile / PWA / guide Android & iOS)
   if (u.pathname === "/download" || u.pathname === "/download/") {
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
     res.end(DOWNLOAD_HTML);
+    return;
+  }
+
+  // Page hors-ligne (Travail A5)
+  if (u.pathname === "/offline.html") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(OFFLINE_HTML);
+    return;
+  }
+
+  // Page de blocage desktop (Travail C1)
+  if (u.pathname === "/desktop-block.html") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(DESKTOP_BLOCK_HTML);
     return;
   }
 
@@ -743,7 +895,7 @@ const server = http.createServer((req, res) => {
   }
 
   // ------------------------------------------------------------------
-  // Proxy vers le binaire (l'app) — rebranding + injection des shims
+  // Proxy vers le binaire (l'app) — rebranding + injection des balises PWA
   // ------------------------------------------------------------------
   const headers = { ...req.headers, host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}` };
   if (!headers.authorization) headers.authorization = AGENT_AUTH; // v2 : API protégée par mot de passe
@@ -767,7 +919,7 @@ const server = http.createServer((req, res) => {
       const isJson = ct.includes("application/json") || ct.includes("text/json");
 
       if (isHtml || isJsCss || isJson) {
-        // Corps bufferisé : injection shims (HTML) + rebranding + framing strict
+        // Corps bufferisé : injection balises PWA (HTML) + rebranding + framing strict
         const chunks = [];
         let size = 0;
         ur.on("data", (c) => {
@@ -778,14 +930,24 @@ const server = http.createServer((req, res) => {
         ur.on("end", () => {
           let body = Buffer.concat(chunks).toString("utf8");
           if (isHtml) {
-            // v2 : l'app native gère elle-même PTY/SSE/API — plus de shims v1 injectés.
             outHeaders["permissions-policy"] = "microphone=*, camera=(), geolocation=()";
+            const pwaTags = [
+              '<link rel="manifest" href="/manifest.json">',
+              '<meta name="theme-color" content="#0d0d0d">',
+              '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+              '<meta name="apple-mobile-web-app-capable" content="yes">',
+              '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
+              '<meta name="apple-mobile-web-app-title" content="Arvys">',
+              `<script src="${PWA_PATH}"></script>`,
+            ].join("");
+
+            if (body.includes("</head>")) {
+              body = body.replace("</head>", `${pwaTags}</head>`);
+            } else if (body.includes("<head>")) {
+              body = body.replace("<head>", `<head>${pwaTags}`);
+            }
           }
           body = rebrand(body, ct);
-          // Framing strict : suppression de TOUT en-tête hop-by-hop relayé —
-          // rejoués tels quels ils produisent une réponse HTTP invalide quand
-          // le cœur tourne sous Bun (fetch du miroir → InvalidHTTPResponse).
-          // Content-Length exact sur le corps final = réponse non-chunked.
           delete outHeaders["content-length"];
           delete outHeaders["content-encoding"];
           delete outHeaders["etag"];
@@ -800,8 +962,6 @@ const server = http.createServer((req, res) => {
         });
         ur.on("error", () => { try { res.destroy(); } catch (e) {} });
       } else {
-        // Streaming transparent (API, SSE, assets) — même hygiène hop-by-hop ;
-        // le serveur recadre lui-même le transfert (chunked ou longueur connue).
         delete outHeaders["transfer-encoding"];
         delete outHeaders["connection"];
         delete outHeaders["keep-alive"];
@@ -824,7 +984,30 @@ const server = http.createServer((req, res) => {
 
   req.pipe(up);
   req.on("error", () => up.destroy());
-});
+};
+
+// ---------------------------------------------------------------------------
+// Création du serveur HTTP ou HTTPS (Travail E3)
+// ---------------------------------------------------------------------------
+let server;
+const TLS_CERT = process.env.ARVYS_TLS_CERT;
+const TLS_KEY = process.env.ARVYS_TLS_KEY;
+
+if (TLS_CERT && TLS_KEY && fs.existsSync(TLS_CERT) && fs.existsSync(TLS_KEY)) {
+  try {
+    const tlsOptions = {
+      cert: fs.readFileSync(TLS_CERT),
+      key: fs.readFileSync(TLS_KEY),
+    };
+    server = https.createServer(tlsOptions, appHandler);
+    log(`[core] mode HTTPS sécurisé activé via ARVYS_TLS_CERT / ARVYS_TLS_KEY`);
+  } catch (e) {
+    log(`[core] échec initialisation TLS (${e && e.message}) — repli sur HTTP`);
+    server = http.createServer(appHandler);
+  }
+} else {
+  server = http.createServer(appHandler);
+}
 
 // Websockets (tunnel transparent + réponse d'erreur relayée au lieu de pendre)
 server.on("upgrade", (req, socket, head) => {
@@ -863,8 +1046,9 @@ server.on("error", (err) => {
   console.error(`[core] erreur serveur: ${err && err.message}`);
 });
 
-server.listen(LISTEN_PORT, "0.0.0.0", () => {
-  log(`ARVYS CORE prêt sur 0.0.0.0:${LISTEN_PORT} -> ARVYS ${UPSTREAM_HOST}:${UPSTREAM_PORT} | passerelle :${GATEWAY_PORT} | assets ${ASSETS_DIR}`);
+const LISTEN_HOST = process.env.ARVYS_LAN === "0" ? "127.0.0.1" : "0.0.0.0";
+server.listen(LISTEN_PORT, LISTEN_HOST, () => {
+  log(`ARVYS CORE prêt sur ${LISTEN_HOST}:${LISTEN_PORT} (LAN: ${LAN_URL}) -> ARVYS ${UPSTREAM_HOST}:${UPSTREAM_PORT} | passerelle :${GATEWAY_PORT} | assets ${ASSETS_DIR}`);
   // Spawns supervisés (mode preview : pas de spawn si port déjà occupé)
   const bin = BIN_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });
   if (!bin) {

@@ -2,69 +2,177 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arvys Code — Installation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arvys Code — Installation Mobile</title>
 <link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d0d0d">
 <style>
 :root{color-scheme:dark}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#080808;color:#dbdbdb;font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:32px 16px}
 main{max-width:680px;width:100%}
-h1{font-size:26px;letter-spacing:.5px;color:#fff;margin-bottom:4px}
-.sub{color:#8a8a8a;margin-bottom:28px}
-.card{background:#111;border:1px solid #232323;border-radius:14px;padding:18px 20px;margin-bottom:14px}
-.card h2{font-size:16px;color:#fff;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.card p,.card li{color:#b9b9b9;font-size:14px}
-.card ol,.card ul{padding-left:20px;margin-top:6px}
-.card li{margin:4px 0}
-a.btn{display:inline-block;margin-top:10px;background:#e8e8e8;color:#0a0a0a;font-weight:600;padding:10px 18px;border-radius:9px;text-decoration:none;font-size:14px}
-a.btn:hover{background:#fff}
+.header-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.logo-badge{width:42px;height:42px;border-radius:10px;background:#0d0d0d;border:1px solid #282828;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+h1{font-size:26px;letter-spacing:.3px;color:#fff;margin:0}
+.sub{color:#8a8a8a;margin-bottom:24px;font-size:14.5px}
+.card{background:#111;border:1px solid #232323;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.card h2{font-size:16.5px;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card p,.card li{color:#b9b9b9;font-size:14px;line-height:1.55}
+.card ol,.card ul{padding-left:20px;margin-top:8px}
+.card li{margin:5px 0}
+.btn{display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:#e8e8e8;color:#0a0a0a;font-weight:600;padding:10px 18px;border-radius:9px;text-decoration:none;font-size:14px;border:none;cursor:pointer;transition:background .15s}
+.btn:hover{background:#fff}
+.btn-secondary{background:#222;color:#eee;border:1px solid #333;margin-left:8px}
+.btn-secondary:hover{background:#2a2a2a;color:#fff}
 .tag{display:inline-block;background:#1d1d1d;border:1px solid #2c2c2c;color:#9a9a9a;border-radius:99px;font-size:11px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+.tag-highlight{background:#1e293b;border-color:#38bdf8;color:#38bdf8}
 .code{background:#181818;border:1px solid #262626;border-radius:7px;padding:1px 7px;font:12.5px ui-monospace,monospace;color:#d9d9d9}
-.note{font-size:12.5px;color:#777;margin-top:8px}
-footer{margin-top:22px;text-align:center;color:#5a5a5a;font-size:12.5px}
-footer a{color:#8a8a8a}
+.note{font-size:12.5px;color:#777;margin-top:10px}
+.qr-bridge{display:flex;flex-wrap:wrap;align-items:center;gap:20px;margin-top:12px}
+.qr-box{background:#fff;border-radius:10px;padding:10px;display:inline-block;flex-shrink:0;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+#qrcode svg, #qrcode table{display:block}
+.qr-info{flex:1;min-width:220px}
+.qr-url-pill{background:#161616;border:1px solid #2b2b2b;border-radius:8px;padding:6px 10px;font-family:ui-monospace,monospace;font-size:12.5px;color:#eee;display:inline-block;margin:6px 0;word-break:break-all}
+footer{margin-top:28px;text-align:center;color:#5a5a5a;font-size:13px}
+footer a{color:#8a8a8a;text-decoration:none}
+footer a:hover{color:#fff}
 </style>
+<script src="/__proxy/qrcode.js"></script>
+<script src="/__proxy/pwa.js"></script>
 </head>
 <body>
 <main>
-<h1>Arvys Code</h1>
-<p class="sub">Installez l'application sur tous vos appareils — ou utilisez-la directement dans le navigateur.</p>
+<div class="header-row">
+  <div class="logo-badge">
+    <svg viewBox="0 0 512 512" width="26" height="26">
+      <rect x="142" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="66" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="142" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="218" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="218" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="294" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="142" y="370" width="76" height="76" fill="#f5f5f5"/>
+      <rect x="294" y="370" width="76" height="76" fill="#f5f5f5"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Arvys Code</h1>
+  </div>
+</div>
+<p class="sub">Application mobile pour Android et iPhone — agent IA local au bout des doigts.</p>
 
-<div class="card">
-<h2>Ordinateur (PC / Mac / Linux) <span class="tag">navigateur</span></h2>
-<p>Rien à installer : ouvrez l'adresse du site, tout fonctionne (terminal, vocal, fichiers).</p>
-<p class="note">Astuce : dans Chrome/Edge, l'icône « Installer » dans la barre d'adresse transforme l'app en fenêtre dédiée.</p>
+<!-- PONT PC -> TÉLÉPHONE (QR CODE LOCAL) -->
+<div class="card" id="card-bridge">
+  <h2>Scanner depuis votre téléphone <span class="tag tag-highlight">Pont PC → Mobile</span></h2>
+  <p>Votre PC héberge le serveur local. Scannez ce QR code avec l'appareil photo de votre téléphone pour ouvrir immédiatement l'application mobile :</p>
+  <div class="qr-bridge">
+    <div class="qr-box">
+      <div id="qrcode"></div>
+    </div>
+    <div class="qr-info">
+      <div style="font-size:12.5px;color:#888;">Adresse réseau du serveur local :</div>
+      <div class="qr-url-pill" id="serverUrl">...</div>
+      <div>
+        <button class="btn btn-secondary" onclick="copyServerUrl()" style="margin-top:4px;padding:6px 12px;font-size:12px;">Copier l'adresse</button>
+      </div>
+      <p class="note">Assurez-vous que votre téléphone et votre PC sont connectés au même réseau WiFi ou via Tailscale/USB.</p>
+    </div>
+  </div>
 </div>
 
+<!-- ANDROID (PWA & APK) -->
 <div class="card">
-<h2>Android (téléphone & tablette) <span class="tag">APK</span></h2>
-<ol>
-<li>Téléchargez l'APK ci-dessous.</li>
-<li>Ouvrez le fichier téléchargé ; Android demandera « autoriser les sources inconnues » pour votre navigateur → autorisez (l'APK est signé en debug, usage personnel).</li>
-<li>Installez, puis ouvrez <b>Arvys Code</b>.</li>
-<li>Au premier appel vocal : acceptez la demande d'autorisation micro.</li>
-</ol>
-<a class="btn" href="/apk/arvys-code.apk" download>Télécharger arvys-code.apk</a>
-<p class="note">Pas d'APK ? La PWA marche aussi : menu ⋮ du navigateur → « Ajouter à l'écran d'accueil ».</p>
+  <h2>Android (Téléphone & Tablette) <span class="tag">PWA & APK</span></h2>
+  <p>Deux modes d'installation au choix :</p>
+  <ol>
+    <li><b>Installation directe (PWA recommandée) :</b> Cliquez sur « Installer l'application » ci-dessous pour ajouter Arvys Code en plein écran natif sans télécharger de fichier externe.</li>
+    <li><b>Application packagée (APK) :</b> Vous pouvez également télécharger et installer le fichier APK complet.</li>
+  </ol>
+  <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;">
+    <button class="btn" id="btn-pwa-install" onclick="triggerPwaInstall()">Installer l'application (PWA)</button>
+    <a class="btn btn-secondary" href="/apk/arvys-code.apk" download>Télécharger arvys-code.apk</a>
+  </div>
+  <p class="note" id="pwa-support-note">Si le bouton PWA n'apparaît pas : ouvrez le menu ⋮ de Chrome → « Ajouter à l'écran d'accueil ».</p>
 </div>
 
+<!-- IPHONE & IPAD (PWA SAFARI) -->
 <div class="card">
-<h2>iPhone & iPad <span class="tag">PWA</span></h2>
-<ol>
-<li>Ouvrez l'adresse du site dans <b>Safari</b>.</li>
-<li>Bouton <b>Partager</b> (carré avec flèche) → <b>Sur l'écran d'accueil</b> → Ajouter.</li>
-<li>L'app apparaît en plein écran avec son icône, comme une app native.</li>
-</ol>
-<p class="note">Le micro : Réglages iOS → Safari → Micro → Autoriser. Les apps iPhone installables (.ipa) exigent un compte développeur Apple — la PWA donne la même expérience sans ce prérequis.</p>
+  <h2>iPhone & iPad <span class="tag">PWA Safari</span></h2>
+  <ol>
+    <li>Ouvrez cette adresse dans <b>Safari</b> sur votre iPhone.</li>
+    <li>Touchez l'icône <b>Partager</b> (carré avec la flèche vers le haut en bas de l'écran).</li>
+    <li>Faites défiler et sélectionnez <b>Sur l'écran d'accueil</b>.</li>
+    <li>Touchez <b>Ajouter</b> en haut à droite.</li>
+    <li>Arvys Code apparaît sur votre écran d'accueil avec son icône dédiée, en <b>plein écran sans barre d'adresse</b>.</li>
+  </ol>
+  <p class="note">Microphone vocal sur iOS : Réglages → Safari → Microphone → Autoriser.</p>
 </div>
 
+<!-- VOCAL & SUPERPOSITION ANDROID -->
 <div class="card">
-<h2>Vocal & superposition (Android)</h2>
-<p>Si la demande d'autorisation micro n'apparaît jamais, une appli « superposée » (filtre lumineux, bulles de chat, lecteur flottant) bloque l'écran : <b>Réglages → Applications spéciales → Affichage par-dessus</b> → désactivez ces applis, rechargez la page, réessayez.</p>
+  <h2>Vocal & superposition (Android)</h2>
+  <p>Si la demande d'autorisation micro n'apparaît jamais, une application superposée (filtre de nuit, bulles de discussion, enregistreur d'écran) bloque l'écran : <b>Paramètres → Applications → Accès spécial → Affichage par-dessus d'autres applications</b> → désactivez-les temporairement, rechargez, et validez le micro.</p>
 </div>
 
-<footer>Arvys Code — <a href="/">ouvrir l'application</a></footer>
+<footer>Arvys Code — <a href="/">Ouvrir l'application mobile</a> • <a href="/__status">Statut serveur</a></footer>
 </main>
+
+<script>
+var targetUrl = location.origin;
+document.getElementById("serverUrl").textContent = targetUrl;
+
+function renderQr() {
+  if (typeof qrcode !== "undefined") {
+    try {
+      var qr = qrcode(0, "M");
+      qr.addData(targetUrl);
+      qr.make();
+      document.getElementById("qrcode").innerHTML = qr.createSvgTag(4.5, 0);
+      return;
+    } catch (e) {}
+  }
+  setTimeout(renderQr, 100);
+}
+renderQr();
+
+function copyServerUrl(btn) {
+  var b = btn || event.target;
+  navigator.clipboard.writeText(targetUrl).then(function() {
+    if (b) { var old = b.textContent; b.textContent = "Copié !"; setTimeout(function() { b.textContent = old; }, 2000); }
+  }).catch(function() {});
+}
+
+function triggerPwaInstall() {
+  if (window.__arvysDeferredPrompt) {
+    window.__arvysDeferredPrompt.prompt();
+    window.__arvysDeferredPrompt.userChoice.then(function(choice) {
+      if (choice.outcome === "accepted") {
+        document.getElementById("btn-pwa-install").textContent = "✓ Installée";
+        document.getElementById("btn-pwa-install").disabled = true;
+      }
+      window.__arvysDeferredPrompt = null;
+    });
+  } else {
+    var b = document.getElementById("btn-pwa-install");
+    if (b) {
+      b.textContent = "Menu ⋮ → « Ajouter à l'écran d'accueil »";
+      setTimeout(function() { b.textContent = "Installer sur cet appareil"; }, 4000);
+    }
+  }
+}
+
+window.addEventListener("arvys-pwa-installable", function() {
+  var b = document.getElementById("btn-pwa-install");
+  if (b) {
+    b.style.background = "#fff";
+    b.style.boxShadow = "0 0 12px rgba(255,255,255,.3)";
+  }
+});
+</script>
 </body>
 </html>

@@ -3,6 +3,11 @@ node_modules/
 .next/
 arvys-mirror/
 .env
+.env*
+*.key
+*.pem
+*.token
+*.secret
 gateway/cf-ai.json
 arvys-cloud/.wrangler/
 oc-bin/
@@ -22,3 +27,12 @@ download/
 
 # Sorties d outils locales (snapshots volumineux)
 tool-results/
+
+# AI Studio scaffolding
+metadata.json
+.eslintrc.json
+eslint.config.mjs
+postcss.config.mjs
+hooks/
+lib/
+

@@ -1,5 +1,7 @@
 (function(){
 if(window.__ocBridgeDone)return;window.__ocBridgeDone=1;
+window.addEventListener('error',function(e){var m=(e&&(e.message||(e.error&&e.error.message)))||'';if(m.indexOf('ResizeObserver')!==-1||m.indexOf('Transport: Failed to fetch')!==-1||m.indexOf('clone terminal')!==-1){if(e.stopImmediatePropagation)e.stopImmediatePropagation();if(e.preventDefault)e.preventDefault();return true}},true);
+window.addEventListener('unhandledrejection',function(e){var m=(e&&e.reason&&(e.reason.message||String(e.reason)))||'';if(m.indexOf('ResizeObserver')!==-1||m.indexOf('Transport: Failed to fetch')!==-1||m.indexOf('clone terminal')!==-1){if(e.stopImmediatePropagation)e.stopImmediatePropagation();if(e.preventDefault)e.preventDefault();return true}},true);
 var realFetch=window.fetch.bind(window);window.__ocRealFetch=realFetch;
 function install(){
  if(window.__ocBridgeInstalled)return;window.__ocBridgeInstalled=1;

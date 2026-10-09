@@ -29,6 +29,40 @@ const path = require("node:path");
 const PORT = parseInt(process.env.GATEWAY_PORT || "3002", 10);
 const MODELS = ["arvys-code", "arvys-flash"];
 
+const GROQ_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_MODELS = {
+  "arvys-code": "llama-3.3-70b-versatile",
+  "arvys-flash": "llama-3.1-8b-instant",
+};
+
+// Quota journalier (20 requêtes gratuites par jour, remise à zéro à 00:00 UTC)
+const DAILY_LIMIT = 20;
+let dailyCount = 0;
+let currentDay = new Date().toISOString().slice(0, 10);
+
+function checkQuota() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== currentDay) {
+    currentDay = today;
+    dailyCount = 0;
+  }
+  if (dailyCount >= DAILY_LIMIT) {
+    return {
+      allowed: false,
+      count: dailyCount,
+      limit: DAILY_LIMIT,
+      reset: "00:00 UTC",
+    };
+  }
+  dailyCount += 1;
+  return {
+    allowed: true,
+    count: dailyCount,
+    limit: DAILY_LIMIT,
+    remaining: DAILY_LIMIT - dailyCount,
+  };
+}
+
 const CHAIN = {
   "arvys-code": [
     "@cf/deepseek-ai/deepseek-v4-flash-0731",
@@ -56,7 +90,8 @@ function loadCreds() {
   return null;
 }
 const CREDS = loadCreds();
-const PROVIDER = CREDS ? "workers-ai" : "none";
+const PROVIDER = GROQ_KEY ? "groq" : CREDS ? "workers-ai" : "none";
+
 
 // --- Utilitaires -------------------------------------------------------------
 function json(res, code, obj) {
@@ -175,16 +210,34 @@ async function chatCompletions(req, res) {
     if (!messages.length) {
       return json(res, 400, { error: { message: "messages requis", type: "invalid_request_error" } });
     }
+
+    // Fournisseur 1 : Groq avec quota de 20 requêtes/jour par défaut
+    if (PROVIDER === "groq") {
+      const q = checkQuota();
+      if (!q.allowed) {
+        return json(res, 429, {
+          error: {
+            message: "Quota quotidien atteint (20 requêtes gratuites/jour). Réinitialisation à 00:00 UTC. Vous pouvez également renseigner votre propre clé API dans les paramètres pour un usage illimité.",
+            type: "insufficient_quota",
+            code: "daily_limit_reached",
+          },
+        });
+      }
+      const groqModel = GROQ_MODELS[askedModel] || GROQ_MODELS["arvys-code"];
+      return handleGroqChat(groqModel, askedModel, messages, reqBody, res);
+    }
+
+    // Fournisseur 2 : Workers AI (secours)
     if (PROVIDER !== "workers-ai") {
       return json(res, 503, {
         error: {
-          message: "Workers AI non configuré (gateway/cf-ai.json attendu)",
+          message: "Aucun fournisseur IA configuré. Configurez GROQ_API_KEY dans les variables d'environnement.",
           type: "server_error",
         },
       });
     }
 
-    // Bascule automatique dans la chaîne de modèles
+    // Bascule automatique dans la chaîne de modèles Workers AI
     let lastErr = null;
     for (const model of CHAIN[chain]) {
       try {
@@ -278,6 +331,55 @@ function streamToClient(src, askedModel, actualModel, res) {
   pump();
 }
 
+async function handleGroqChat(groqModel, askedModel, messages, reqBody, res) {
+  const isStream = !!reqBody.stream;
+  const payload = {
+    model: groqModel,
+    messages,
+    max_tokens: Math.min(parseInt(reqBody.max_tokens, 10) || 4096, 8192),
+    temperature: typeof reqBody.temperature === "number" ? reqBody.temperature : 0.6,
+    stream: isStream,
+  };
+  try {
+    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GROQ_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const errText = await r.text().catch(() => "");
+      return json(res, r.status, {
+        error: { message: `Erreur Groq (${r.status}): ${errText}`, type: "api_error" },
+      });
+    }
+    if (isStream) {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      });
+      const reader = r.body.getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+      res.end();
+      return;
+    }
+    const data = await r.json();
+    return json(res, 200, data);
+  } catch (e) {
+    return json(res, 502, {
+      error: { message: `Erreur passerelle Groq: ${e && e.message}`, type: "server_error" },
+    });
+  }
+}
+
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, "http://x");
   if (u.pathname === "/health") {
@@ -286,6 +388,7 @@ const server = http.createServer((req, res) => {
       service: "arvys-gateway",
       models: MODELS,
       provider: PROVIDER,
+      quota: PROVIDER === "groq" ? { limit: DAILY_LIMIT, used: dailyCount, remaining: Math.max(0, DAILY_LIMIT - dailyCount) } : null,
       chain: CHAIN,
     });
   }
