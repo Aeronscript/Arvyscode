@@ -85,32 +85,34 @@ footer a:hover{color:#fff}
   </div>
 </div>
 
-<!-- ANDROID (PWA & APK) -->
+<!-- ANDROID (WebAPK & Installation Directe) -->
 <div class="card">
-  <h2>Android (Téléphone & Tablette) <span class="tag">PWA & APK</span></h2>
-  <p>Deux modes d'installation au choix :</p>
+  <h2>Android (Téléphone & Tablette) <span class="tag tag-highlight">Application Native WebAPK</span></h2>
+  <p>Arvys Code s'installe directement sur votre appareil comme une application native complète :</p>
   <ol>
-    <li><b>Installation directe (PWA recommandée) :</b> Cliquez sur « Installer l'application » ci-dessous pour ajouter Arvys Code en plein écran natif sans télécharger de fichier externe.</li>
-    <li><b>Application packagée (APK) :</b> Vous pouvez également télécharger et installer le fichier APK complet.</li>
+    <li><b>Installation 1-clic :</b> Touchez le bouton <b>« Installer sur cet appareil »</b> ci-dessous.</li>
+    <li>Android compile et installe automatiquement l'application dans votre tiroir d'applications.</li>
+    <li>L'application s'ouvre en <b>plein écran immersif</b>, avec son icône officielle et son stockage dédié.</li>
   </ol>
   <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;">
-    <button class="btn" id="btn-pwa-install" onclick="triggerPwaInstall()">Installer l'application (PWA)</button>
-    <a class="btn btn-secondary" href="/apk/arvys-code.apk" download>Télécharger arvys-code.apk</a>
+    <button class="btn" id="btn-pwa-install" onclick="triggerPwaInstall()">📲 Installer sur cet appareil</button>
+    <a class="btn" style="background:#1a1a1e;color:#ddd;border:1px solid #333;" href="/">Ouvrir l'application directement</a>
   </div>
-  <p class="note" id="pwa-support-note">Si le bouton PWA n'apparaît pas : ouvrez le menu ⋮ de Chrome → « Ajouter à l'écran d'accueil ».</p>
+  <p class="note" id="pwa-support-note">Si le bouton n'apparaît pas : ouvrez le menu ⋮ de votre navigateur → « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>
 </div>
 
-<!-- IPHONE & IPAD (PWA SAFARI) -->
+<!-- IPHONE & IPAD (Application Autonome iOS) -->
 <div class="card">
-  <h2>iPhone & iPad <span class="tag">PWA Safari</span></h2>
+  <h2>iPhone & iPad <span class="tag tag-highlight">Application Autonome iOS</span></h2>
+  <p>Sur iOS, Arvys Code s'installe sans passer par l'App Store en mode <b>Application Autonome (Standalone)</b>. Elle fonctionne exactement comme une application native sans aucune barre de navigation Safari :</p>
   <ol>
-    <li>Ouvrez cette adresse dans <b>Safari</b> sur votre iPhone.</li>
-    <li>Touchez l'icône <b>Partager</b> (carré avec la flèche vers le haut en bas de l'écran).</li>
-    <li>Faites défiler et sélectionnez <b>Sur l'écran d'accueil</b>.</li>
-    <li>Touchez <b>Ajouter</b> en haut à droite.</li>
-    <li>Arvys Code apparaît sur votre écran d'accueil avec son icône dédiée, en <b>plein écran sans barre d'adresse</b>.</li>
+    <li>Ouvrez cette page dans <b>Safari</b> sur votre iPhone.</li>
+    <li>Touchez l'icône <b>Partager</b> (le carré avec la flèche vers le haut <span class="code">⎋</span> en bas au centre).</li>
+    <li>Faites défiler le menu vers le bas et touchez <b>« Sur l'écran d'accueil »</b>.</li>
+    <li>Touchez <b>« Ajouter »</b> en haut à droite.</li>
+    <li><b>Résultat :</b> L'icône Arvys Code apparaît sur l'écran d'accueil de votre iPhone. En la lançant, Safari disparaît complètement et l'app s'exécute en <b>plein écran natif iOS</b>.</li>
   </ol>
-  <p class="note">Microphone vocal sur iOS : Réglages → Safari → Microphone → Autoriser.</p>
+  <p class="note">Pour activer le micro : Réglages de l'iPhone → Safari → Microphone → Autoriser.</p>
 </div>
 
 <!-- VOCAL & SUPERPOSITION ANDROID -->

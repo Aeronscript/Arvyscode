@@ -128,6 +128,17 @@
     );
   }
 
+  // Verrouillage iOS Standalone (conserve l'application dans sa fenêtre autonome)
+  if (window.navigator.standalone === true) {
+    document.addEventListener("click", function (e) {
+      var a = e.target && e.target.closest ? e.target.closest("a") : null;
+      if (a && a.href && a.hostname === location.hostname && !a.target && !a.hasAttribute("download")) {
+        e.preventDefault();
+        location.assign(a.href);
+      }
+    }, false);
+  }
+
   function showInstallBanner() {
     if (isStandalone()) return;
     if (sessionStorage.getItem("arvysDismissInstallBanner") === "1") return;
