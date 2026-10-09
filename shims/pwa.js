@@ -5,6 +5,15 @@
   // ---------------------------------------------------------------------------
   // 0. Interception de window.open pour bloquer les redirections Discord / Aide
   // ---------------------------------------------------------------------------
+  window.openArvysGuideModal = function () {
+    if (window.__realOpenArvysGuide) {
+      window.__realOpenArvysGuide();
+    } else {
+      window.__arvysPendingGuide = true;
+    }
+  };
+  window.openArvysSecretAnimation = window.openArvysGuideModal;
+
   var _rawWindowOpen = window.open;
   window.open = function (url, target, features) {
     var u = String(url || "");
@@ -16,10 +25,8 @@
       u.indexOf("discord.gg") !== -1 ||
       u.indexOf("#arvys-secret") !== -1
     ) {
-      if (window.openArvysSecretAnimation) {
-        window.openArvysSecretAnimation();
-      } else {
-        window.__arvysPendingSecretOpen = true;
+      if (window.openArvysGuideModal) {
+        window.openArvysGuideModal();
       }
       return null;
     }

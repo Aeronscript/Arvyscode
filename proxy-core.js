@@ -247,7 +247,17 @@ let upReconnectTimer = null;
 function upstreamConnect() {
   if (upStream) return;
   const up = http.request(
-    { host: UPSTREAM_HOST, port: UPSTREAM_PORT, method: "GET", path: "/api/event", headers: { accept: "text/event-stream", "accept-encoding": "identity" } },
+    {
+      host: UPSTREAM_HOST,
+      port: UPSTREAM_PORT,
+      method: "GET",
+      path: "/api/event",
+      headers: {
+        authorization: AGENT_AUTH,
+        accept: "text/event-stream",
+        "accept-encoding": "identity",
+      },
+    },
     (ur) => {
       let sbuf = "";
       ur.on("data", (c) => {
@@ -557,15 +567,25 @@ function rebrand(text, ct) {
       out = out.replace(/(?<![\w$.])Opencode(?![\w$])/g, "Arvys Code");
     }
     // Remplacement des liens et actions d'aide/Discord par le Guide Officiel Arvys
+    out = out.split("u.$$click=()=>{I(`open`,!1),t.openExternal(`https://arvys.local/secret-help`)}").join("u.$$click=()=>{I(`open`,!1);if(window.openArvysGuideModal)window.openArvysGuideModal();}");
+    out = out.split("help:()=>t.openExternal(`https://arvys.local/secret-help`)").join("help:()=>{if(window.openArvysGuideModal)window.openArvysGuideModal();}");
+    out = out.split("u.$$click=()=>{I(`open`,!1),t.openExternal(`https://opencode.ai/desktop-feedback`)}").join("u.$$click=()=>{I(`open`,!1);if(window.openArvysGuideModal)window.openArvysGuideModal();}");
+    out = out.split("help:()=>t.openExternal(`https://opencode.ai/desktop-feedback`)").join("help:()=>{if(window.openArvysGuideModal)window.openArvysGuideModal();}");
     out = out.split("https://opencode.ai/desktop-feedback").join("https://arvys.local/secret-help");
     out = out.split("https://discord.com/invite/opencode").join("https://arvys.local/secret-help");
     out = out.split("https://discord.gg/opencode").join("https://arvys.local/secret-help");
     out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
     out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
 
-    // Injection des identifiants réels de session pour suppression et gestion complète
+    // Bouton corbeille visible sur chaque session de l'Accueil + suppression confirmée
+    out = out.split("when:ik,get children(){var t=JO();return R(t,r(Gi,{class:`flex shrink-0 items-center`,placement:`bottom`,get value(){return e.language.t(`common.archive`)},get children(){return r(Hi,{\"data-action\":`home-session-archive`,variant:`ghost-muted`,size:`large`,get icon(){return r(X,{name:`archive`})},get\"aria-label\"(){return e.language.t(`common.archive`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onArchiveSession(e.record.session)}})}})),t}}").join("when:!0,get children(){var t=JO();return R(t,r(Hi,{\"data-action\":`home-session-delete`,class:`text-red-500 hover:text-red-400 p-1.5 flex items-center justify-center cursor-pointer`,size:`large`,get icon(){return r(X,{name:`close`})},get\"aria-label\"(){return e.language.t(`common.delete`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onDeleteSession(e.server,e.record.session)}})),t}}");
+
+    // Rendre l'action de suppression visible en permanence sur mobile et bureau
+    out = out.split("JO=o(`<div class=\"hover-reveal absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 group-hover/session:opacity-100 focus-within:opacity-100\">`)").join("JO=o(`<div class=\"absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 z-20 opacity-90 hover:opacity-100\">`)");
+
+    // Geste Swipe vers la droite pour supprimer une session + injection identifiants
     if (out.includes("var m=YO();")) {
-      out = out.replace(/var m=YO\(\);/g, 'var m=YO();try{m.setAttribute("data-session-id",e.record.session.id);m.setAttribute("data-session-title",e.record.session.title||"");}catch(_e){}');
+      out = out.replace(/var m=YO\(\);/g, 'var m=YO();try{m.setAttribute("data-session-id",e.record.session.id);m.setAttribute("data-session-title",e.record.session.title||"");let _sx=0,_sy=0,_sw=false;m.addEventListener("touchstart",ev=>{if(ev.touches&&ev.touches[0]){_sx=ev.touches[0].clientX;_sy=ev.touches[0].clientY;_sw=false;}},{passive:true});m.addEventListener("touchmove",ev=>{if(ev.touches&&ev.touches[0]){let dx=ev.touches[0].clientX-_sx,dy=Math.abs(ev.touches[0].clientY-_sy);if(dx>25&&dy<35){_sw=true;m.style.transform="translateX("+Math.min(dx,80)+"px)";m.style.background="rgba(239,68,68,0.2)";}}},{passive:true});m.addEventListener("touchend",ev=>{if(_sw){m.style.transition="transform .2s ease,background .2s ease";m.style.transform="";m.style.background="";let ex=ev.changedTouches&&ev.changedTouches[0]?ev.changedTouches[0].clientX:0;if(ex-_sx>60){e.onDeleteSession(e.server,e.record.session);}}});}catch(_e){}');
     }
     return out;
   }
@@ -797,23 +817,23 @@ const appHandler = (req, res) => {
   // Shims navigateur (ponts SSE / vocal / terminal / pwa / qrcode)
   if (u.pathname === BRIDGE_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
-    res.end(BRIDGE_JS);
+    res.end(readShim("bridge.js"));
     return;
   }
   if (u.pathname === EVENTS_PATH) { serveEvents(req, res, u); return; }
   if (u.pathname === VOICE_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
-    res.end(VOICE_JS);
+    res.end(readShim("voice.js"));
     return;
   }
   if (u.pathname === PTY_SHIM_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
-    res.end(PTY_SHIM_JS);
+    res.end(readShim("pty-shim.js"));
     return;
   }
   if (u.pathname === PWA_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
-    res.end(PWA_JS);
+    res.end(readShim("pwa.js"));
     return;
   }
   if (u.pathname === QRCODE_PATH) {
@@ -942,6 +962,7 @@ const appHandler = (req, res) => {
               '<meta name="apple-mobile-web-app-capable" content="yes">',
               '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
               '<meta name="apple-mobile-web-app-title" content="Arvys">',
+              `<script src="${BRIDGE_PATH}"></script>`,
               `<script src="${PWA_PATH}"></script>`,
             ].join("");
 
