@@ -1,10 +1,9 @@
-/* Arvys Code — Service Worker v3 (PWA Offline Réelle) */
-const CACHE_NAME = "arvys-v3";
+/* Arvys Code — Service Worker v5-live (PWA Offline Réelle & Mise à Jour Immédiate) */
+const CACHE_NAME = "arvys-v5-live";
 const PRECACHE_SHELL = [
   "/",
   "/download",
   "/offline.html",
-  "/desktop-block.html",
   "/manifest.json",
   "/favicon.ico",
   "/apple-touch-icon.png",
@@ -42,7 +41,7 @@ self.addEventListener("install", (event) => {
 });
 
 // ---------------------------------------------------------------------------
-// Activation : purge des anciens caches (arvys-v1, arvys-v2, workbox, etc.)
+// Activation : purge immédiate de TOUS les anciens caches (arvys-v1, v2, v3, etc.)
 // ---------------------------------------------------------------------------
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -59,7 +58,6 @@ self.addEventListener("activate", (event) => {
         )
       )
       .then(() => {
-        // Nettoyage éventuel du marqueur legacy __ocSWctl dans IndexedDB
         if (typeof indexedDB !== "undefined" && indexedDB.deleteDatabase) {
           try {
             indexedDB.deleteDatabase("__ocSWctl");
@@ -73,8 +71,8 @@ self.addEventListener("activate", (event) => {
 // ---------------------------------------------------------------------------
 // Fetch : stratégies fines
 // 1. /api/*, /v1/*, /__* : réseau pur, jamais interceptés (SSE, PTY, vocal)
-// 2. /assets/* : cache-first (chunks fingerprintés immuables)
-// 3. Navigations HTML : network-first (timeout 3s) -> cache -> /offline.html
+// 2. Chunks JS/CSS : Network-First pour toujours avoir le code à jour
+// 3. Navigations HTML : Network-First avec fallback cache puis offline.html
 // ---------------------------------------------------------------------------
 self.addEventListener("fetch", (event) => {
   const req = event.request;
@@ -97,23 +95,23 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Chunks Vite/Next fingerprintés & icônes statiques : Cache-First
+  // Chunks Vite/Next & assets d'interface : Network-First pour garantir la fraîcheur
   if (
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/_assets/") ||
+    url.pathname.startsWith("/__proxy/") ||
     url.pathname.startsWith("/arvys-icons/")
   ) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((response) => {
+      fetch(req)
+        .then((response) => {
           if (response && response.status === 200) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
           }
           return response;
-        });
-      })
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }
@@ -141,27 +139,27 @@ self.addEventListener("fetch", (event) => {
                 return caches.match("/offline.html");
               });
             })
-            .then((fallback) => {
-              if (fallback) resolve(fallback);
-              else reject(new Error("Timeout sans cache"));
+            .then((res) => {
+              if (res) resolve(res);
+              else resolve(fetch(req));
             })
-            .catch(reject);
+            .catch(() => resolve(caches.match("/offline.html")));
         }, 3000);
 
         fetch(req)
-          .then((res) => {
-            if (timer) clearTimeout(timer);
+          .then((response) => {
             if (!timedOut) {
-              if (res && res.status === 200) {
-                const copy = res.clone();
+              clearTimeout(timer);
+              if (response && response.status === 200) {
+                const copy = response.clone();
                 caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
               }
-              resolve(res);
+              resolve(response);
             }
           })
           .catch((err) => {
-            if (timer) clearTimeout(timer);
             if (!timedOut) {
+              clearTimeout(timer);
               caches
                 .match(req)
                 .then((hit) => {
@@ -175,7 +173,7 @@ self.addEventListener("fetch", (event) => {
                   if (fallback) resolve(fallback);
                   else reject(err);
                 })
-                .catch(() => reject(err));
+                .catch(() => resolve(caches.match("/offline.html")));
             }
           });
       })
@@ -183,19 +181,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Autres ressources GET (images, favicons, manifests, shims) : Stale-while-revalidate / Cache-First
+  // Pour toutes les autres ressources : Network-First avec fallback Cache
   event.respondWith(
-    caches.match(req).then((cached) => {
-      const fetchPromise = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(req)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(req))
   );
+});
+
+// ---------------------------------------------------------------------------
+// Messages depuis les pages (contrôle, skipWaiting, ping)
+// ---------------------------------------------------------------------------
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

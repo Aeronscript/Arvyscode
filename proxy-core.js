@@ -177,9 +177,10 @@ const BRIDGE_JS = readShim("bridge.js");
 const VOICE_JS = readShim("voice.js");
 const PTY_SHIM_JS = readShim("pty-shim.js");
 const PWA_JS = readShim("pwa.js");
-const SW_JS = (() => {
+function readSw() {
   try { return fs.readFileSync(path.join(ASSETS_DIR, "sw.js"), "utf8"); } catch (e) { return readShim("sw.js"); }
-})();
+}
+const SW_JS = readSw();
 const QRCODE_JS = (() => {
   try { return fs.readFileSync(path.join(ASSETS_DIR, "qrcode.js"), "utf8"); } catch (e) { return ""; }
 })();
@@ -764,13 +765,13 @@ const appHandler = (req, res) => {
     return;
   }
 
-  // VRAI SERVICE WORKER v3 (Travail A) — servi en no-store
+  // VRAI SERVICE WORKER v5-live — servi en no-store
   if (u.pathname === "/sw.js") {
     res.writeHead(200, {
       "Content-Type": "application/javascript; charset=utf-8",
       "Cache-Control": "no-store, must-revalidate",
     });
-    res.end(SW_JS);
+    res.end(readSw());
     return;
   }
 
@@ -781,6 +782,44 @@ const appHandler = (req, res) => {
     return;
   }
   if (u.pathname === EVENTS_PATH) { serveEvents(req, res, u); return; }
+
+  // Proxy direct débufferisé pour /api/event (streaming temps réel sans attendre l'actualisation)
+  if (u.pathname === "/api/event" && req.method === "GET") {
+    const up = http.request(
+      {
+        host: UPSTREAM_HOST,
+        port: UPSTREAM_PORT,
+        method: "GET",
+        path: req.url,
+        headers: {
+          ...req.headers,
+          host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}`,
+          authorization: req.headers.authorization || AGENT_AUTH,
+          accept: "text/event-stream",
+          "accept-encoding": "identity",
+        },
+      },
+      (ur) => {
+        res.writeHead(ur.statusCode || 200, {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform, no-store",
+          "Connection": "keep-alive",
+          "X-Accel-Buffering": "no",
+        });
+        if (res.flushHeaders) res.flushHeaders();
+        ur.on("data", (c) => {
+          res.write(c);
+          if (res.flush) res.flush();
+        });
+        ur.on("end", () => { try { res.end(); } catch (e) {} });
+        ur.on("error", () => { try { res.destroy(); } catch (e) {} });
+      }
+    );
+    up.on("error", () => { try { res.destroy(); } catch (e) {} });
+    req.on("close", () => { try { up.destroy(); } catch (e) {} });
+    up.end();
+    return;
+  }
   if (u.pathname === VOICE_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
     res.end(readShim("voice.js"));
