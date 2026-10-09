@@ -567,6 +567,7 @@ function rebrand(text, ct) {
       out = out.replace(/(?<![\w$.])Opencode(?![\w$])/g, "Arvys Code");
     }
     // Remplacement des liens et actions d'aide/Discord par le Guide Officiel Arvys
+    out = out.split("get onClick(){return e.onOpenHelp}").join("get onClick(){return()=>{if(window.openArvysGuideModal)window.openArvysGuideModal();}}");
     out = out.split("u.$$click=()=>{I(`open`,!1),t.openExternal(`https://arvys.local/secret-help`)}").join("u.$$click=()=>{I(`open`,!1);if(window.openArvysGuideModal)window.openArvysGuideModal();}");
     out = out.split("help:()=>t.openExternal(`https://arvys.local/secret-help`)").join("help:()=>{if(window.openArvysGuideModal)window.openArvysGuideModal();}");
     out = out.split("u.$$click=()=>{I(`open`,!1),t.openExternal(`https://opencode.ai/desktop-feedback`)}").join("u.$$click=()=>{I(`open`,!1);if(window.openArvysGuideModal)window.openArvysGuideModal();}");
@@ -578,7 +579,7 @@ function rebrand(text, ct) {
     out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
 
     // Bouton corbeille visible sur chaque session de l'Accueil + suppression confirmée
-    out = out.split("when:ik,get children(){var t=JO();return R(t,r(Gi,{class:`flex shrink-0 items-center`,placement:`bottom`,get value(){return e.language.t(`common.archive`)},get children(){return r(Hi,{\"data-action\":`home-session-archive`,variant:`ghost-muted`,size:`large`,get icon(){return r(X,{name:`archive`})},get\"aria-label\"(){return e.language.t(`common.archive`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onArchiveSession(e.record.session)}})}})),t}}").join("when:!0,get children(){var t=JO();return R(t,r(Hi,{\"data-action\":`home-session-delete`,class:`text-red-500 hover:text-red-400 p-1.5 flex items-center justify-center cursor-pointer`,size:`large`,get icon(){return r(X,{name:`close`})},get\"aria-label\"(){return e.language.t(`common.delete`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onDeleteSession(e.server,e.record.session)}})),t}}");
+    out = out.split("when:ik,get children(){var t=JO();return R(t,r(Gi,{class:`flex shrink-0 items-center`,placement:`bottom`,get value(){return e.language.t(`common.archive`)},get children(){return r(Hi,{\"data-action\":`home-session-archive`,variant:`ghost-muted`,size:`large`,get icon(){return r(X,{name:`archive`})},get\"aria-label\"(){return e.language.t(`common.archive`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onArchiveSession(e.record.session)}})}})),t}}").join("when:!0,get children(){var t=JO();return R(t,r(Hi,{\"data-action\":`home-session-delete`,class:`text-red-500 hover:text-red-400 p-1.5 flex items-center justify-center cursor-pointer`,size:`large`,get icon(){return r(X,{name:`trash`})},get\"aria-label\"(){return e.language.t(`common.delete`)},onClick:t=>{t.preventDefault(),t.stopPropagation(),e.onDeleteSession(e.server,e.record.session)}})),t}}");
 
     // Rendre l'action de suppression visible en permanence sur mobile et bureau
     out = out.split("JO=o(`<div class=\"hover-reveal absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 group-hover/session:opacity-100 focus-within:opacity-100\">`)").join("JO=o(`<div class=\"absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1 z-20 opacity-90 hover:opacity-100\">`)");
@@ -625,48 +626,7 @@ function isMobileUA(ua) {
 }
 
 function shouldBlockDesktop(req, u) {
-  // Override debug (Travail C4) : ?desktop=1 ou cookie arvysAllowDesktop=1
-  if (u.searchParams.has("desktop") || u.searchParams.get("desktop") === "1") return false;
-  const cookie = String(req.headers.cookie || "");
-  if (cookie.includes("arvysAllowDesktop=1")) return false;
-
-  const p = u.pathname;
-  // Exceptions autorisées pour un PC : installation, statut, SW, assets, API
-  if (
-    p === "/download" ||
-    p === "/download/" ||
-    p === "/desktop-block.html" ||
-    p === "/offline.html" ||
-    p === "/sw.js" ||
-    p === "/__status" ||
-    p === "/__proxy/nuke.js" ||
-    p === BRIDGE_PATH ||
-    p === VOICE_PATH ||
-    p === PTY_SHIM_PATH ||
-    p === PWA_PATH ||
-    p === QRCODE_PATH ||
-    p.startsWith("/__ptybridge") ||
-    p === EVENTS_PATH ||
-    p === ASR_PATH ||
-    p.startsWith("/api/") ||
-    p.startsWith("/v1/") ||
-    p.startsWith("/apk/") ||
-    p === "/arvys-code.apk" ||
-    p === "/download/arvys-code.apk" ||
-    p === "/download/apk" ||
-    p.startsWith("/arvys-icons/") ||
-    p.startsWith("/assets/") ||
-    p.startsWith("/_assets/") ||
-    ARVYS_ICON_ROUTES[p]
-  ) {
-    return false;
-  }
-
-  // Si User-Agent non mobile, bloquer l'accès à l'application (/, /chat, /session, etc.)
-  const ua = String(req.headers["user-agent"] || "");
-  if (!isMobileUA(ua)) {
-    return true;
-  }
+  // L'application Arvys Code est 100% accessible sur tous les écrans et navigateurs (mobile, desktop, tablette, iframe AI Studio)
   return false;
 }
 
