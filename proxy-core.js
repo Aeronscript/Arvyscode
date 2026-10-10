@@ -28,6 +28,19 @@ const UPSTREAM_PORT = parseInt(process.env.OC_PORT || "3001", 10);
 const GATEWAY_PORT = parseInt(process.env.GATEWAY_PORT || "3002", 10);
 const ROOT = __dirname;
 
+// Espace de travail utilisateur : TOUS les projets vivent ici, jamais dans les
+// sources de l'application. Sur Render (utilisateur non-root) un /workspace à
+// la racine est interdit d'écriture → défaut = <projet>/workspace (toujours
+// inscriptible). Surchargable via ARVYS_WORKSPACE.
+const WORKSPACE = path.resolve(process.env.ARVYS_WORKSPACE || path.join(ROOT, "workspace"));
+try {
+  fs.mkdirSync(WORKSPACE, { recursive: true });
+} catch (e) {
+  console.error(`[core] workspace indisponible (${e && e.message}) — le spawn se repliera sur ROOT`);
+}
+// Persistance par instantanés Git (Render gratuit) — inerte sans config.
+const PERSIST = require("./persistence");
+
 // Chemins publics des couches embarquées
 const BRIDGE_PATH = "/__proxy/bridge.js";
 const VOICE_PATH = "/__proxy/voice.js";
@@ -115,6 +128,11 @@ function keepAlive(name, cmd, args, opts = {}) {
     st.lastExit = code;
     log(`[${name}] sortie code=${code}`);
     if (opts.noRespawn) return;
+    if (opts.maxAttempts && st.attempts >= opts.maxAttempts) {
+      log(`[${name}] abandon après ${st.attempts} tentatives`);
+      if (typeof opts.onGiveUp === "function") opts.onGiveUp();
+      return;
+    }
     setTimeout(() => keepAlive(name, cmd, args, opts), 3000);
   });
   return child;
@@ -766,6 +784,13 @@ const appHandler = (req, res) => {
         sw: stat(path.join(ASSETS_DIR, "sw.js")),
       },
       build_id: (() => { try { return fs.readFileSync(path.join(ROOT, ".next", "BUILD_ID"), "utf8").trim(); } catch (e) { return null; } })(),
+      workspace: {
+        path: WORKSPACE,
+        lock: process.env.ARVYS_LOCK !== "0",
+        writable: (() => { try { fs.accessSync(WORKSPACE, fs.constants.W_OK); return true; } catch (e) { return false; } })(),
+        entries: (() => { try { return fs.readdirSync(WORKSPACE).length; } catch (e) { return -1; } })(),
+      },
+      persist: PERSIST.status(),
       spawn: SPAWN_STATS,
       env: {
         port: process.env.PORT || null,
@@ -982,8 +1007,69 @@ const appHandler = (req, res) => {
   }
 
   // ------------------------------------------------------------------
-  // Proxy vers le binaire (l'app) — rebranding + injection des balises PWA
+  // Verrou workspace : aucun chemin hors de l'espace utilisateur ne passe
+  // (query OU corps JSON). Fini l'accès aux .env, clés et sources de l'app.
+  // ARVYS_LOCK=0 pour désactiver (dépannage uniquement).
   // ------------------------------------------------------------------
+  const PATH_KEY_RE = /^(path|dir|directory|cwd|folder|file|root|target|dest|destination|source|worktree|workspace)$/i;
+  const outsideWorkspace = (v) => {
+    if (typeof v !== "string" || !v.trim()) return false;
+    const abs = path.isAbsolute(v) ? path.resolve(v) : path.resolve(WORKSPACE, v);
+    return !(abs === WORKSPACE || abs.startsWith(WORKSPACE + path.sep));
+  };
+  const denyLock = (detail) => {
+    log(`[lock] refusé (hors workspace) : ${req.method} ${u.pathname} ${detail || ""}`);
+    res.writeHead(403, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(JSON.stringify({ error: "Accès refusé : seuls les chemins du workspace Arvys sont autorisés." }));
+  };
+  if (process.env.ARVYS_LOCK !== "0") {
+    for (const [k, v] of u.searchParams) {
+      if (PATH_KEY_RE.test(k) && outsideWorkspace(v)) { denyLock(`(query ${k})`); return; }
+    }
+    const M = (req.method || "GET").toUpperCase();
+    const CT = String(req.headers["content-type"] || "").toLowerCase();
+    if ((M === "POST" || M === "PUT" || M === "PATCH" || M === "DELETE") && CT.includes("application/json")) {
+      const chunks = [];
+      let size = 0;
+      let overflow = false;
+      req.on("data", (c) => {
+        size += c.length;
+        if (size > 12 * 1024 * 1024) { overflow = true; chunks.length = 0; return; }
+        chunks.push(c);
+      });
+      req.on("end", () => {
+        if (overflow) {
+          res.writeHead(413, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+          res.end(JSON.stringify({ error: "Corps trop volumineux (> 12 Mo)" }));
+          return;
+        }
+        let bad = null;
+        try {
+          const j = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+          const scan = (o, depth) => {
+            if (bad || !o || typeof o !== "object" || depth > 6) return;
+            for (const [k, v] of Object.entries(o)) {
+              if (PATH_KEY_RE.test(k) && outsideWorkspace(v)) { bad = `${k}=${String(v).slice(0, 120)}`; return; }
+              if (v && typeof v === "object") scan(v, depth + 1);
+              if (bad) return;
+            }
+          };
+          scan(j, 0);
+        } catch (e) {}
+        if (bad) { denyLock(`(corps ${bad})`); return; }
+        forward(Buffer.concat(chunks));
+      });
+      req.on("error", () => { try { res.destroy(); } catch (e) {} });
+      return;
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // Proxy vers le binaire (l'app) — rebranding + injection des balises PWA
+  // (function déclarée : hoisting — le verrou ci-dessus y fait appel depuis
+  // ses callbacks asynchrones)
+  // ------------------------------------------------------------------
+  function forward(payload) {
   const headers = { ...req.headers, host: `${UPSTREAM_HOST}:${UPSTREAM_PORT}` };
   if (!headers.authorization) headers.authorization = AGENT_AUTH; // v2 : API protégée par mot de passe
   // corps décodés en utf8 pour le rebranding : jamais de gzip upstream
@@ -1079,8 +1165,14 @@ const appHandler = (req, res) => {
     }
   });
 
-  req.pipe(up);
-  req.on("error", () => up.destroy());
+  if (Buffer.isBuffer(payload)) up.end(payload);
+  else {
+    payload.pipe(up);
+    payload.on("error", () => up.destroy());
+  }
+  }
+
+  forward(req);
 };
 
 // ---------------------------------------------------------------------------
@@ -1146,31 +1238,43 @@ server.on("error", (err) => {
 const LISTEN_HOST = process.env.ARVYS_LAN === "0" ? "127.0.0.1" : "0.0.0.0";
 server.listen(LISTEN_PORT, LISTEN_HOST, () => {
   log(`ARVYS CORE prêt sur ${LISTEN_HOST}:${LISTEN_PORT} (LAN: ${LAN_URL}) -> ARVYS ${UPSTREAM_HOST}:${UPSTREAM_PORT} | passerelle :${GATEWAY_PORT} | assets ${ASSETS_DIR}`);
-  // Spawns supervisés (mode preview : pas de spawn si port déjà occupé)
-  const bin = BIN_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });
-  if (!bin) {
-    log(`[arvys] binaire introuvable — candidats : ${BIN_CANDIDATES.join(" | ")}`);
-  } else {
-    portBusy(UPSTREAM_PORT).then((busy) => {
-      if (busy) log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`);
-      else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
-        cwd: ROOT, // projet par défaut = racine du projet (contient opencode.jsonc)
-        env: {
-          OPENCODE_PASSWORD: AGENT_PASSWORD,
-          ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
-        },
+  // Persistance : restaure discussions/projets/config AVANT de spawn l'agent
+  // (sinon l'agent recrée un stockage vide). Plafonné à 15 s max — un dépôt
+  // non configuré ou injoignant ne bloque jamais le démarrage.
+  PERSIST.init({ workspace: WORKSPACE });
+  PERSIST.whenReady(() => {
+    // Spawns supervisés (mode preview : pas de spawn si port déjà occupé)
+    const bin = BIN_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });
+    if (!bin) {
+      log(`[arvys] binaire introuvable — candidats : ${BIN_CANDIDATES.join(" | ")}`);
+    } else {
+      const spawnAgent = (dir, isFallback) => portBusy(UPSTREAM_PORT).then((busy) => {
+        if (busy) { log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`); return; }
+        keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
+          cwd: dir, // projet par défaut = workspace utilisateur (sélecteur propre + verrou serveur)
+          env: {
+            OPENCODE_PASSWORD: AGENT_PASSWORD,
+            ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
+          },
+          maxAttempts: 4,
+          onGiveUp: isFallback ? undefined : () => {
+            log("[arvys] le workspace ne démarre pas — repli sur ROOT (compatibilité)");
+            spawnAgent(ROOT, true);
+          },
+        });
       });
-    });
-  }
-  const gw = GW_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });
-  if (!gw) {
-    log(`[gateway] script introuvable — candidats : ${GW_CANDIDATES.join(" | ")}`);
-  } else {
-    portBusy(GATEWAY_PORT).then((busy) => {
-      if (busy) log(`[gateway] :${GATEWAY_PORT} déjà occupé — pas de spawn (mode preview)`);
-      else keepAlive("gateway", process.execPath, [gw], { cwd: ROOT });
-    });
-  }
-  upstreamConnect(); // connexion SSE persistante pour le bridge long-polling
+      spawnAgent(WORKSPACE, false);
+    }
+    const gw = GW_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } });
+    if (!gw) {
+      log(`[gateway] script introuvable — candidats : ${GW_CANDIDATES.join(" | ")}`);
+    } else {
+      portBusy(GATEWAY_PORT).then((busy) => {
+        if (busy) log(`[gateway] :${GATEWAY_PORT} déjà occupé — pas de spawn (mode preview)`);
+        else keepAlive("gateway", process.execPath, [gw], { cwd: ROOT });
+      });
+    }
+    upstreamConnect(); // connexion SSE persistante pour le bridge long-polling
+  });
 });
 

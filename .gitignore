@@ -18,6 +18,7 @@ arvys-cloud/wrangler.toml
 arvys-cloud/_headers
 arvys-cloud/.assetsignore
 db/
+workspace/
 *.log
 /tmp/
 # journal de travail local

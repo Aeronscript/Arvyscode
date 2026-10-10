@@ -140,6 +140,39 @@ Pour déployer ArvysCode sur [Render](https://render.com) et configurer vos mod�
    - **`arvys-flash`** utilise `llama-3.1-8b-instant` (itérations rapides, questions courtes).
    - **Quota intégré** : Le système applique par défaut une limite de **20 requêtes/messages par jour**, avec une **réinitialisation automatique à 00:00 UTC** (minuit). Si la limite est atteinte, une notification claire s'affiche. En renseignant votre `GROQ_API_KEY` personnelle, l'usage devient illimité ou géré selon votre quota Groq.
 
+## Workspace verrouillé, sélecteur propre & Persistance (Render gratuit)
+
+### Workspace dédié + verrou serveur (sécurité)
+
+L'agent démarre désormais dans un **workspace dédié** (`<projet>/workspace`, remplaçable via `ARVYS_WORKSPACE`). Le sélecteur de projets part de ce dossier vide — plus aucun projet « Arvys Code » pré-rempli. Et le cœur **refuse tout chemin hors du workspace**, présent dans la query ou le corps JSON des requêtes (`path`, `dir`, `cwd`, `folder`, `worktree`…) : plus jamais d'accès aux `.env`, aux clés ou aux sources de l'application depuis l'interface. En cas de souci, `ARVYS_LOCK=0` désactive le verrou (dépannage uniquement) — chaque refus est journalisé dans `/__status`.
+
+Si le workspace empêchait jamais l'agent de démarrer, le cœur bascule automatiquement sur l'ancien comportement (repli `ROOT`) après 4 tentatives — impossible de retomber sur une page d'attente infinie.
+
+### Persistance sans payer : instantanés Git automatiques
+
+Sur Render **gratuit**, le disque est éphémère : chaque mise en veille ou redéploiement efface tout — d'où la perte des discussions. Arvys Code embarque désormais une persistance intégrée (`persistence.js`) :
+
+- **Au démarrage**, le dernier instantané est restauré **avant** le lancement de l'agent (sessions, messages, auth, projets).
+- **Toutes les 3 minutes** et **à l'arrêt** (SIGTERM), un instantané est poussé vers un dépôt GitHub **privé** : historique = 1 commit amendé + force-push, la taille du dépôt reste stable.
+- **Couvert** : `~/.local/share/opencode` (sessions & messages), `~/.config/opencode` (auth/config), le **workspace** (projets importés/créés) + dossiers additionnels via `ARVYS_SNAP_DIRS="cle:/chemin"`. `node_modules`, `.git` imbriqués et fichiers > 25 Mo sont exclus automatiquement.
+- **Perte maximale en cas d'incident : ~3 minutes.**
+- **Sans configuration, le module est inerte** (aucun effet de bord).
+
+Configuration (≈ 3 minutes) :
+
+1. Créez un dépôt GitHub **privé** vide, ex. `Aeronscript/arvys-data`.
+2. Créez un **fine-grained token** (Settings → Developer settings → Fine-grained tokens) avec **Contents : Read and Write**, limité à ce dépôt uniquement.
+3. Sur Render (onglet Environment), ajoutez :
+   - `ARVYS_SNAP_REPO` = `Aeronscript/arvys-data`
+   - `ARVYS_SNAP_TOKEN` = `github_pat_…`
+   - Optionnels : `ARVYS_SNAP_INTERVAL_S` (défaut `180`), `ARVYS_WORKSPACE` (chemin du workspace), `ARVYS_SNAP_DIRS` (dossiers additionnels).
+
+> ⚠️ N'utilisez pas le même token pour ce dépôt et pour pousser du code. Le token de snapshots ne sert qu'à lire/écrire dans `arvys-data`, jamais dans le dépôt applicatif.
+
+### Keep-alive (anti cold-start)
+
+`.github/workflows/keep-alive.yml` (fichier fourni à la racine du projet / livré séparément — GitHub exige le scope `workflow` sur le token pour pousser ce fichier ; ajoutez-le via l'interface GitHub → *Add file* si besoin) interroge `/__status` toutes les 10 minutes pour éviter l'endormissement de l'instance gratuite (le fameux 502 au premier accès). À savoir : GitHub désactive les workflows planifiés après **60 jours sans activité** sur le dépôt — un simple push ou une relance manuelle dans l'onglet **Actions** réactive le workflow. Vous pouvez aussi le désactiver : les instantanés couvrent chaque réveil de toute façon.
+
 ## Crédits
 
 Basé sur le projet open-source [opencode](https://github.com/sst/opencode) (MIT), rebrandé et étendu par ARVYS.

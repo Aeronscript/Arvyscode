@@ -700,22 +700,33 @@
     }, { passive: true });
 
     // -------------------------------------------------------------------------
-    // 10. Redirection automatique du dossier projet par défaut vers /workspace
+    // 10. Sélecteur de dossier : valeur par défaut = workspace Arvys RÉEL
+    // (injecté par le cœur via window.__ARVYS_WORKSPACE — plus de chemin codé
+    // en dur : sur Render le workspace vit dans le dossier du projet).
     // -------------------------------------------------------------------------
+    var ARVYS_WS = window.__ARVYS_WORKSPACE || "/workspace";
+    var ARVYS_LEGACY_PATHS = {
+      "/app/applet": 1,
+      "/app": 1,
+      "/app/app": 1,
+      "/workspace": 1,
+      "/root": 1,
+      "/opt/render/project/src": 1
+    };
     function patchDirectoryPicker() {
       var inputs = document.querySelectorAll('input[type="text"], input:not([type])');
       inputs.forEach(function (input) {
         var val = input.value || input.defaultValue || "";
-        if (val === "/app/applet" || val === "/app" || val.includes("/app/applet")) {
-          input.value = "/workspace";
-          if (input.defaultValue) input.defaultValue = "/workspace";
+        if (ARVYS_LEGACY_PATHS[val]) {
+          input.value = ARVYS_WS;
+          if (input.defaultValue) input.defaultValue = ARVYS_WS;
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.dispatchEvent(new Event("change", { bubbles: true }));
         }
       });
       document.querySelectorAll('*').forEach(function (el) {
         if (el.children.length === 0 && (el.textContent === "/app/applet" || el.textContent === "app/applet")) {
-          el.textContent = "/workspace";
+          el.textContent = ARVYS_WS;
         }
       });
     }
