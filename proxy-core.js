@@ -1143,10 +1143,11 @@ server.listen(LISTEN_PORT, LISTEN_HOST, () => {
   if (!bin) {
     log(`[arvys] binaire introuvable — candidats : ${BIN_CANDIDATES.join(" | ")}`);
   } else {
+    try { fs.mkdirSync("/workspace", { recursive: true }); } catch (e) {}
     portBusy(UPSTREAM_PORT).then((busy) => {
       if (busy) log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`);
       else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
-        cwd: ROOT, // projet par défaut = racine du workspace (pas le dossier du binaire)
+        cwd: "/workspace", // dossier de travail par défaut = /workspace (espace utilisateur propre)
         env: {
           OPENCODE_PASSWORD: AGENT_PASSWORD,
           ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
