@@ -37,6 +37,7 @@ const PTY_BRIDGE = "/__ptybridge";
 const PTY_SHIM_PATH = PTY_BRIDGE + "/shim.js";
 const NUKE_PATH = "/__proxy/nuke.js";
 const PWA_PATH = "/__proxy/pwa.js";
+const QUOTA_PATH = "/__proxy/quota.js";
 const QRCODE_PATH = "/__proxy/qrcode.js";
 
 // ---------------------------------------------------------------------------
@@ -871,6 +872,11 @@ const appHandler = (req, res) => {
     res.end(readShim("pwa.js"));
     return;
   }
+  if (u.pathname === QUOTA_PATH) {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
+    res.end(readShim("quota.js"));
+    return;
+  }
   if (u.pathname === QRCODE_PATH) {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store, must-revalidate" });
     res.end(QRCODE_JS);
@@ -1029,6 +1035,7 @@ const appHandler = (req, res) => {
               '<meta name="apple-mobile-web-app-title" content="Arvys">',
               `<script src="${BRIDGE_PATH}"></script>`,
               `<script src="${PWA_PATH}"></script>`,
+              `<script src="${QUOTA_PATH}"></script>`,
             ].join("");
 
             if (body.includes("</head>")) {
