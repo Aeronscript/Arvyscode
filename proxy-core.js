@@ -907,50 +907,6 @@ const appHandler = (req, res) => {
     return;
   }
 
-  // Importation de dossier depuis l'appareil du client dans /workspace
-  if (u.pathname === "/api/arvys/import-folder" && req.method === "POST") {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (c) => {
-      size += c.length;
-      if (size > 50 * 1024 * 1024) {
-        res.writeHead(413, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Dossier trop volumineux (> 50 Mo)" }));
-        req.destroy();
-        return;
-      }
-      chunks.push(c);
-    });
-    req.on("end", () => {
-      try {
-        const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-        const folderName = (body.folderName || "mon-projet-" + Date.now().toString(36)).replace(/[^a-zA-Z0-9_-]/g, "_");
-        const files = body.files || [];
-        const targetDir = path.join("/workspace", folderName);
-        fs.mkdirSync(targetDir, { recursive: true });
-
-        for (const file of files) {
-          const relPath = file.path || file.name;
-          const safeRelPath = relPath.replace(/^([a-zA-Z]:)?[\/\\]+/, "").replace(/\.\.+/g, "");
-          const destPath = path.join(targetDir, safeRelPath);
-          fs.mkdirSync(path.dirname(destPath), { recursive: true });
-          const content = file.content || "";
-          if (file.encoding === "base64") {
-            fs.writeFileSync(destPath, Buffer.from(content, "base64"));
-          } else {
-            fs.writeFileSync(destPath, content, "utf8");
-          }
-        }
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true, folder: folderName, path: targetDir }));
-      } catch (e) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: e && e.message ? e.message : "Erreur d'importation" }));
-      }
-    });
-    req.on("error", () => { try { res.destroy(); } catch (e) {} });
-    return;
-  }
 
   // Assets ARVYS CODE (icônes, manifest, favicons) + interception globale des icônes OpenCode
   if (ARVYS_ICON_ROUTES[u.pathname]) { serveArvysAsset(res, ARVYS_ICON_ROUTES[u.pathname]); return; }
@@ -1188,11 +1144,10 @@ server.listen(LISTEN_PORT, LISTEN_HOST, () => {
   if (!bin) {
     log(`[arvys] binaire introuvable — candidats : ${BIN_CANDIDATES.join(" | ")}`);
   } else {
-    try { fs.mkdirSync("/workspace", { recursive: true }); } catch (e) {}
     portBusy(UPSTREAM_PORT).then((busy) => {
       if (busy) log(`[arvys] :${UPSTREAM_PORT} déjà occupé — pas de spawn (mode preview)`);
       else keepAlive("arvys", bin, ["serve", "--hostname", "127.0.0.1", "--port", String(UPSTREAM_PORT)], {
-        cwd: "/workspace", // dossier de travail par défaut = /workspace (espace utilisateur propre)
+        cwd: ROOT, // projet par défaut = racine du projet (contient opencode.jsonc)
         env: {
           OPENCODE_PASSWORD: AGENT_PASSWORD,
           ...(AGENT_CONFIG_CONTENT ? { OPENCODE_CONFIG_CONTENT: AGENT_CONFIG_CONTENT } : {}),
