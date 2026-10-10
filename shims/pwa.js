@@ -698,5 +698,31 @@
         }, 50);
       }
     }, { passive: true });
+
+    // -------------------------------------------------------------------------
+    // 10. Redirection automatique du dossier projet par défaut vers /workspace
+    // -------------------------------------------------------------------------
+    function patchDirectoryPicker() {
+      var inputs = document.querySelectorAll('input[type="text"], input:not([type])');
+      inputs.forEach(function (input) {
+        var val = input.value || input.defaultValue || "";
+        if (val === "/app/applet" || val === "/app" || val.includes("/app/applet")) {
+          input.value = "/workspace";
+          if (input.defaultValue) input.defaultValue = "/workspace";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+      document.querySelectorAll('*').forEach(function (el) {
+        if (el.children.length === 0 && (el.textContent === "/app/applet" || el.textContent === "app/applet")) {
+          el.textContent = "/workspace";
+        }
+      });
+    }
+    setInterval(patchDirectoryPicker, 300);
+    document.addEventListener("click", function () {
+      setTimeout(patchDirectoryPicker, 50);
+      setTimeout(patchDirectoryPicker, 200);
+    }, true);
   });
 })();
