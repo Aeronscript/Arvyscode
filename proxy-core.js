@@ -1122,6 +1122,7 @@ const appHandler = (req, res) => {
               `<script src="${BRIDGE_PATH}"></script>`,
               `<script src="${PWA_PATH}"></script>`,
               `<script src="${QUOTA_PATH}"></script>`,
+              `<script>window.__ARVYS_WORKSPACE=${JSON.stringify(WORKSPACE)};</script>`,
             ].join("");
 
             if (body.includes("</head>")) {
