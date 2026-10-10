@@ -907,6 +907,51 @@ const appHandler = (req, res) => {
     return;
   }
 
+  // Importation de dossier depuis l'appareil du client dans /workspace
+  if (u.pathname === "/api/arvys/import-folder" && req.method === "POST") {
+    const chunks = [];
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > 50 * 1024 * 1024) {
+        res.writeHead(413, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Dossier trop volumineux (> 50 Mo)" }));
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on("end", () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+        const folderName = (body.folderName || "mon-projet-" + Date.now().toString(36)).replace(/[^a-zA-Z0-9_-]/g, "_");
+        const files = body.files || [];
+        const targetDir = path.join("/workspace", folderName);
+        fs.mkdirSync(targetDir, { recursive: true });
+
+        for (const file of files) {
+          const relPath = file.path || file.name;
+          const safeRelPath = relPath.replace(/^([a-zA-Z]:)?[\/\\]+/, "").replace(/\.\.+/g, "");
+          const destPath = path.join(targetDir, safeRelPath);
+          fs.mkdirSync(path.dirname(destPath), { recursive: true });
+          const content = file.content || "";
+          if (file.encoding === "base64") {
+            fs.writeFileSync(destPath, Buffer.from(content, "base64"));
+          } else {
+            fs.writeFileSync(destPath, content, "utf8");
+          }
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, folder: folderName, path: targetDir }));
+      } catch (e) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: e && e.message ? e.message : "Erreur d'importation" }));
+      }
+    });
+    req.on("error", () => { try { res.destroy(); } catch (e) {} });
+    return;
+  }
+
   // Assets ARVYS CODE (icônes, manifest, favicons) + interception globale des icônes OpenCode
   if (ARVYS_ICON_ROUTES[u.pathname]) { serveArvysAsset(res, ARVYS_ICON_ROUTES[u.pathname]); return; }
   if (u.pathname.startsWith("/icons/") || u.pathname.includes("favicon") || u.pathname.includes("apple-touch-icon") || u.pathname.endsWith("webmanifest")) {

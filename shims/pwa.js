@@ -724,5 +724,98 @@
       setTimeout(patchDirectoryPicker, 50);
       setTimeout(patchDirectoryPicker, 200);
     }, true);
+
+    // -------------------------------------------------------------------------
+    // 11. Importation de dossier depuis l'appareil du client
+    // -------------------------------------------------------------------------
+    var importInput = document.createElement("input");
+    importInput.type = "file";
+    importInput.webkitdirectory = true;
+    importInput.directory = true;
+    importInput.multiple = true;
+    importInput.style.display = "none";
+    document.body.appendChild(importInput);
+
+    importInput.addEventListener("change", async function (e) {
+      var files = e.target.files;
+      if (!files || files.length === 0) return;
+      
+      var firstPath = files[0].webkitRelativePath || files[0].name;
+      var folderName = firstPath.split("/")[0] || "mon-projet-" + Date.now().toString(36);
+      
+      var toast = document.createElement("div");
+      toast.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:999999;background:#111219;color:#fff;border:1px solid #232635;padding:12px 18px;border-radius:8px;font:13px -apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.5)";
+      toast.textContent = "📁 Importation de " + files.length + " fichiers (" + folderName + ")...";
+      document.body.appendChild(toast);
+
+      var payloadFiles = [];
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        var relPath = file.webkitRelativePath || file.name;
+        var cleanPath = relPath.includes("/") ? relPath.split("/").slice(1).join("/") : relPath;
+        if (!cleanPath) cleanPath = file.name;
+
+        await new Promise(function (resolve) {
+          var reader = new FileReader();
+          var isText = file.type.startsWith("text/") || /\.(js|ts|tsx|jsx|json|md|css|html|py|sh|yml|yaml|txt|gitignore)$/i.test(file.name);
+          if (isText) {
+            reader.onload = function (evt) {
+              payloadFiles.push({ path: cleanPath, content: evt.target.result, encoding: "utf8" });
+              resolve();
+            };
+            reader.readAsText(file);
+          } else {
+            reader.onload = function (evt) {
+              var base64 = evt.target.result.split(",")[1] || "";
+              payloadFiles.push({ path: cleanPath, content: base64, encoding: "base64" });
+              resolve();
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+
+      try {
+        var res = await fetch("/api/arvys/import-folder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folderName: folderName, files: payloadFiles })
+        });
+        var data = await res.json();
+        if (data.success) {
+          toast.textContent = "✅ Dossier importé avec succès ! Ouverture...";
+          setTimeout(function () {
+            toast.remove();
+            window.location.reload();
+          }, 1000);
+        } else {
+          throw new Error(data.error || "Échec");
+        }
+      } catch (err) {
+        toast.textContent = "❌ Erreur d'importation : " + (err.message || err);
+        setTimeout(function () { toast.remove(); }, 4000);
+      }
+      importInput.value = "";
+    });
+
+    function injectImportButton() {
+      var modal = document.querySelector('[role="dialog"], .dialog-content, div[class*="dialog"]');
+      if (modal && !modal.querySelector("#arvys-import-btn")) {
+        var actions = modal.querySelector('footer, div[class*="footer"], div[class*="actions"], div[class*="buttons"]');
+        if (actions) {
+          var btn = document.createElement("button");
+          btn.id = "arvys-import-btn";
+          btn.type = "button";
+          btn.className = "arvys-help-action-btn";
+          btn.style.cssText = "background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:12px;";
+          btn.innerHTML = '📁 Importer un dossier';
+          btn.onclick = function () {
+            importInput.click();
+          };
+          actions.insertBefore(btn, actions.firstChild);
+        }
+      }
+    }
+    setInterval(injectImportButton, 600);
   });
 })();
