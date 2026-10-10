@@ -189,7 +189,9 @@
       // Fix 1 Upstream PR #53816 : Full tool error text & no truncation
       "[data-component*='error'], [class*='error'], [class*='tool-error'], [data-slot*='error'] { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: break-word !important; max-height: none !important; }",
       // Fix 2 Upstream PR #51781 : Allow touch scrolling in directory picker and modal lists
-      "[role='dialog'], [data-component*='picker'], [data-component*='select'], [class*='overflow-y'], [class*='overflow-auto'] { -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }"
+      "[role='dialog'], [data-component*='picker'], [data-component*='select'], [class*='overflow-y'], [class*='overflow-auto'] { -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }",
+      // Fix 3 Upstream PR #49461 : Disable submit hover stuck state on touch
+      "@media (hover: none) { button:hover, [role='button']:hover, [data-action*='submit']:hover { background-color: unset !important; opacity: 1 !important; transform: none !important; } }"
     ].join("\n");
     document.head.appendChild(style);
 
@@ -683,5 +685,18 @@
       enableTouchScrolling();
     }, { passive: true });
     setInterval(enableTouchScrolling, 3000);
+
+    // -------------------------------------------------------------------------
+    // 9. Fix 3 Upstream PR #49461 : Disable submit hover stuck state on touch
+    // -------------------------------------------------------------------------
+    document.addEventListener("touchend", function (e) {
+      var btn = e.target.closest ? e.target.closest("button, [role='button'], [data-action*='submit']") : null;
+      if (btn) {
+        btn.blur();
+        setTimeout(function () {
+          btn.blur();
+        }, 50);
+      }
+    }, { passive: true });
   });
 })();
