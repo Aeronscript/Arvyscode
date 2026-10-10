@@ -32,13 +32,53 @@ const MODELS = ["arvys-code", "arvys-flash"];
 const GROQ_KEY = process.env.GROQ_API_KEY || "";
 const GROQ_MODELS = {
   "arvys-code": [
+    "openai/gpt-oss-120b",
     "llama-3.3-70b-versatile",
-    "deepseek-r1-distill-llama-70b"
+    "qwen/qwen3.6-27b",
+    "qwen-2.5-32b",
+    "moonshotai/kimi-k2-instruct",
+    "mixtral-8x7b-32768"
   ],
   "arvys-flash": [
-    "llama-3.1-8b-instant"
+    "openai/gpt-oss-20b",
+    "llama-3.1-8b-instant",
+    "llama-3.2-3b-preview",
+    "llama-3.2-1b-preview",
+    "gemma2-9b-it"
   ],
 };
+
+let dynamicGroqModels = null;
+let lastModelFetch = 0;
+
+async function getAvailableGroqModels() {
+  const now = Date.now();
+  if (dynamicGroqModels && now - lastModelFetch < 300000) {
+    return dynamicGroqModels;
+  }
+  if (!GROQ_KEY) return null;
+  try {
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort(), 4000);
+    const r = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: `Bearer ${GROQ_KEY}` },
+      signal: ac.signal,
+    });
+    clearTimeout(t);
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data.data)) {
+        dynamicGroqModels = data.data.map((m) => m.id);
+        lastModelFetch = now;
+        console.log("[arvys-gateway] Modèles Groq actifs détectés :", dynamicGroqModels.length);
+        return dynamicGroqModels;
+      }
+    }
+  } catch (e) {
+    // Échec doux, on continue avec les modèles par défaut
+  }
+  return null;
+}
 
 // Quota journalier (20 requêtes gratuites par jour, remise à zéro à 00:00 UTC)
 const DAILY_LIMIT = 20;
@@ -337,7 +377,21 @@ function streamToClient(src, askedModel, actualModel, res) {
 
 async function handleGroqChat(askedModel, messages, reqBody, res) {
   const isStream = !!reqBody.stream;
-  const modelsToTry = GROQ_MODELS[askedModel] || GROQ_MODELS["arvys-code"];
+  let modelsToTry = [...(GROQ_MODELS[askedModel] || GROQ_MODELS["arvys-code"])];
+
+  // Découverte dynamique : si on a pu lister les modèles du compte, on priorise ceux qui sont actifs
+  const activeIds = await getAvailableGroqModels();
+  if (Array.isArray(activeIds) && activeIds.length > 0) {
+    const activeSet = new Set(activeIds);
+    const existing = modelsToTry.filter((m) => activeSet.has(m));
+    const others = modelsToTry.filter((m) => !activeSet.has(m));
+    // S'il y a d'autres modèles compatibles sur le compte, on les ajoute en repli
+    const discovered = activeIds.filter((id) =>
+      /gpt-oss|llama-3\.[23]|qwen|mixtral|gemma/i.test(id) && !modelsToTry.includes(id)
+    );
+    modelsToTry = [...existing, ...others, ...discovered];
+  }
+
   let lastErrText = "";
   let lastStatus = 502;
 
@@ -381,8 +435,8 @@ async function handleGroqChat(askedModel, messages, reqBody, res) {
         const errText = await r.text().catch(() => "");
         lastStatus = r.status;
         lastErrText = errText;
-        if (/does not exist|not have access|model_not_found|404/i.test(errText)) {
-          console.warn(`[arvys-gateway] Groq model ${m} not available, trying fallback...`);
+        if (/does not exist|not have access|model_not_found|404|decommissioned|deprecated|discontinued|d[ée]saffect[ée]|pris en charge|unsupported/i.test(errText)) {
+          console.warn(`[arvys-gateway] Modèle Groq ${m} indisponible (${errText.slice(0, 80)}), essai du repli suivant...`);
           continue;
         }
         return json(res, r.status, {
@@ -392,6 +446,33 @@ async function handleGroqChat(askedModel, messages, reqBody, res) {
     } catch (e) {
       lastErrText = e && e.message;
     }
+  }
+
+  // Si tous les modèles Groq échouent et que Workers AI est configuré, on bascule en ultime secours
+  if (CREDS) {
+    console.warn("[arvys-gateway] Bascule automatique sur Workers AI après échec de tous les modèles Groq...");
+    try {
+      const chain = CHAIN[askedModel] ? askedModel : "arvys-code";
+      for (const model of CHAIN[chain]) {
+        try {
+          const out = await runOnce(model, messages, reqBody);
+          if (out.stream) {
+            return streamToClient(out.stream, askedModel, model, res);
+          }
+          res.setHeader("x-arvys-model", model);
+          return json(res, 200, {
+            id: "chatcmpl-arvys-" + Date.now().toString(36),
+            object: "chat.completion",
+            created: Math.floor(Date.now() / 1000),
+            model: askedModel,
+            choices: [
+              { index: 0, message: { role: "assistant", content: out.text }, finish_reason: "stop" },
+            ],
+            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          });
+        } catch (e) {}
+      }
+    } catch (e) {}
   }
 
   return json(res, lastStatus, {

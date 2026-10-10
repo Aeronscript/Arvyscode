@@ -5,22 +5,9 @@
   "model": "arvys/arvys-code",
   "small_model": "arvys/arvys-flash",
   "autoupdate": false,
-  // Agent principal « Arvys » : identité + personnalité de l'assistant.
-  // Sans ça, l'agent garde le nom/prompt du provider sous-jacent (l'UI dit
-  // ARVYS mais l'assistant ne se présente pas comme Arvys).
-  "default_agent": "arvys",
-  "agents": {
-    "arvys": {
-      "description": "Arvys — assistant de codage ARVYS Code",
-      "mode": "primary",
-      "model": "arvys/arvys-code",
-      "color": "#7c5cff",
-      "system": "Tu es Arvys, l'assistant de codage officiel de ARVYS Code. Tu es pragmatique, direct et technique. Tu réponds en français sauf demande contraire. Tu travailles dans le code de l'utilisateur : tu lis, écris, corriges et exécutes sous ses ordres. Tu ne mentions jamais OpenCode ni Claude : tu es Arvys, propulsé par les modèles internes arvys-code (raisonneur) et arvys-flash (rapide)."
-    }
-  },
   "providers": {
     "arvys": {
-      "name": "Arvys",
+      "name": "Arvys Code",
       "package": "@ai-sdk/openai-compatible",
       "settings": { "baseURL": "http://127.0.0.1:3002/v1" },
       "headers": { "Authorization": "Bearer arvys-local" },

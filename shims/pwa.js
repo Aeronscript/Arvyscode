@@ -624,5 +624,24 @@
         return false;
       }
     }, true);
+
+    // -------------------------------------------------------------------------
+    // 6. Application stricte du vrai logo Arvys Code (Modèles & Favicon)
+    // -------------------------------------------------------------------------
+    function enforceArvysLogos() {
+      // Modèles dans les sélecteurs et listes
+      document.querySelectorAll('img[data-component="custom-managed-provider-icon"], img[src*="custom-managed-provider"], img[src*="opencode.ai/favicon"]').forEach(function (img) {
+        if (img.getAttribute("src") !== "/icon.svg") {
+          img.src = "/icon.svg";
+        }
+      });
+      // Favicon dans <head>
+      var fav = document.querySelector('link[rel="icon"]');
+      if (fav && fav.getAttribute("href") !== "/favicon.ico" && fav.getAttribute("href") !== "/icon.svg") {
+        fav.href = "/favicon.ico";
+      }
+    }
+    enforceArvysLogos();
+    setInterval(enforceArvysLogos, 1200);
   });
 })();

@@ -587,6 +587,17 @@ function rebrand(text, ct) {
     if (out.includes("var m=YO();")) {
       out = out.replace(/var m=YO\(\);/g, 'var m=YO();try{m.setAttribute("data-session-id",e.record.session.id);m.setAttribute("data-session-title",e.record.session.title||"");let _sx=0,_sy=0,_sw=false;m.addEventListener("touchstart",ev=>{if(ev.touches&&ev.touches[0]){_sx=ev.touches[0].clientX;_sy=ev.touches[0].clientY;_sw=false;}},{passive:true});m.addEventListener("touchmove",ev=>{if(ev.touches&&ev.touches[0]){let dx=ev.touches[0].clientX-_sx,dy=Math.abs(ev.touches[0].clientY-_sy);if(dx>25&&dy<35){_sw=true;m.style.transform="translateX("+Math.min(dx,80)+"px)";m.style.background="rgba(239,68,68,0.2)";}}},{passive:true});m.addEventListener("touchend",ev=>{if(_sw){m.style.transition="transform .2s ease,background .2s ease";m.style.transform="";m.style.background="";let ex=ev.changedTouches&&ev.changedTouches[0]?ev.changedTouches[0].clientX:0;if(ex-_sx>60){e.onDeleteSession(e.server,e.record.session);}}});}catch(_e){}');
     }
+
+    // Remplacement du logo de modèle (OpenCode logo -> Logo officiel Arvys Code)
+    if (out.includes("opencode-logo")) {
+      const arvysModelLogo = '<svg data-component=opencode-logo aria-hidden=true viewBox="0 0 16 16"fill=none xmlns=http://www.w3.org/2000/svg><rect width="16" height="16" rx="3.5" fill="#0d0d0d"></rect><rect x="4.4" y="2" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="6.8" y="2" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="9.2" y="2" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="4.4" y="4.4" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="9.2" y="4.4" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="4.4" y="6.8" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="6.8" y="6.8" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="9.2" y="6.8" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="4.4" y="9.2" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="9.2" y="9.2" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="4.4" y="11.6" width="2.4" height="2.4" fill="#f5f5f5"></rect><rect x="9.2" y="11.6" width="2.4" height="2.4" fill="#f5f5f5"></rect>';
+      out = out.replace(/<svg data-component=opencode-logo aria-hidden=true viewBox="0 0 16 16"fill=none xmlns=http:\/\/www\.w3\.org\/2000\/svg><g transform="translate\(1\.2 1\.2\) scale\(0\.85\)"><path opacity=0\.2 d="M11\.1999 12\.8H4\.79993V6\.40002H11\.1999V12\.8Z"fill=currentColor><\/path><path d="M11\.2 3\.2H4\.79998V12\.8H11\.2V3\.2ZM14\.4 16H1\.59998V0H14\.4V16Z"fill=currentColor>/g, arvysModelLogo);
+    }
+    out = out.split("t.provider.id===`opencode`").join("(t.provider.id===`opencode`||t.provider.id===`arvys`)");
+    out = out.split('t.provider.id==="opencode"').join('(t.provider.id==="opencode"||t.provider.id==="arvys")');
+    out = out.split("https://opencode.ai/favicon.svg").join("/icon.svg");
+    out = out.split("https://opencode.ai/favicon-96x96-v3.png").join("/icon-192.png");
+    out = out.split("https://opencode.ai/favicon.ico").join("/favicon.ico");
     return out;
   }
   for (const [a, b] of REBRANDS) if (out.includes(a)) out = out.split(a).join(b);
@@ -595,6 +606,12 @@ function rebrand(text, ct) {
   out = out.split("https://discord.gg/opencode").join("https://arvys.local/secret-help");
   out = out.split("https://discord.gg/h5TNnkFVNy").join("https://arvys.local/secret-help");
   out = out.split("https://discord.com/invite/h5TNnkFVNy").join("https://arvys.local/secret-help");
+  out = out.split("https://opencode.ai/favicon.svg").join("/icon.svg");
+  out = out.split("https://opencode.ai/favicon-96x96-v3.png").join("/icon-192.png");
+  out = out.split("https://opencode.ai/favicon.ico").join("/favicon.ico");
+  out = out.split("/icons/prod/favicon.ico").join("/favicon.ico");
+  out = out.split("/icons/prod/apple-touch-icon.png").join("/apple-touch-icon.png");
+  out = out.split("/site.webmanifest").join("/manifest.json");
   return out;
 }
 
@@ -603,15 +620,36 @@ function rebrand(text, ct) {
 // ---------------------------------------------------------------------------
 const ARVYS_ICON_ROUTES = {
   "/favicon.ico": "favicon.ico",
+  "/favicon.svg": "icon.svg",
   "/apple-touch-icon.png": "apple-touch-icon.png",
+  "/apple-touch-icon-v3.png": "apple-touch-icon.png",
+  "/favicon-96x96-v3.png": "icon-192.png",
+  "/favicon-v3.ico": "favicon.ico",
+  "/favicon-v3.svg": "icon.svg",
   "/manifest.json": "manifest.json",
+  "/site.webmanifest": "manifest.json",
+  "/manifest.webmanifest": "manifest.json",
   "/icon-192.png": "icon-192.png",
   "/icon-512.png": "icon-512.png",
   "/icon-512-maskable.png": "icon-512-maskable.png",
   "/icon.svg": "icon.svg",
+  "/social-share.png": "icon-512.png",
   "/wordmark-inline.svg": "wordmark-inline.svg",
   "/mark-inline.svg": "mark-inline.svg",
   "/wordmark.svg": "wordmark.svg",
+  // Interception complète des icônes OpenCode
+  "/icons/prod/favicon.ico": "favicon.ico",
+  "/icons/prod/favicon.svg": "icon.svg",
+  "/icons/prod/apple-touch-icon.png": "apple-touch-icon.png",
+  "/icons/prod/web-app-manifest-192x192.png": "icon-192.png",
+  "/icons/prod/web-app-manifest-512x512.png": "icon-512.png",
+  "/icons/prod/favicon-96x96.png": "icon-192.png",
+  "/icons/prod/favicon-32x32.png": "favicon.ico",
+  "/icons/prod/favicon-16x16.png": "favicon.ico",
+  "/icons/dev/favicon.ico": "favicon.ico",
+  "/icons/dev/apple-touch-icon.png": "apple-touch-icon.png",
+  "/icons/dev/web-app-manifest-192x192.png": "icon-192.png",
+  "/icons/dev/web-app-manifest-512x512.png": "icon-512.png",
 };
 
 // ---------------------------------------------------------------------------
@@ -869,8 +907,29 @@ const appHandler = (req, res) => {
     return;
   }
 
-  // Assets ARVYS CODE (icônes, manifest) + interception des icônes OpenCode
+  // Assets ARVYS CODE (icônes, manifest, favicons) + interception globale des icônes OpenCode
   if (ARVYS_ICON_ROUTES[u.pathname]) { serveArvysAsset(res, ARVYS_ICON_ROUTES[u.pathname]); return; }
+  if (u.pathname.startsWith("/icons/") || u.pathname.includes("favicon") || u.pathname.includes("apple-touch-icon") || u.pathname.endsWith("webmanifest")) {
+    if (u.pathname.endsWith(".png")) {
+      serveArvysAsset(res, u.pathname.includes("512") ? "icon-512.png" : u.pathname.includes("apple") ? "apple-touch-icon.png" : "icon-192.png");
+      return;
+    }
+    if (u.pathname.endsWith(".svg")) {
+      serveArvysAsset(res, "icon.svg");
+      return;
+    }
+    if (u.pathname.endsWith(".json") || u.pathname.endsWith(".webmanifest")) {
+      serveArvysAsset(res, "manifest.json");
+      return;
+    }
+    serveArvysAsset(res, "favicon.ico");
+    return;
+  }
+  // Remplacement de l'icône de fournisseur OpenCode par le logo officiel Arvys
+  if (u.pathname.includes("custom-managed-provider") && u.pathname.endsWith(".svg")) {
+    serveArvysAsset(res, "icon.svg");
+    return;
+  }
   if (u.pathname.startsWith("/arvys-icons/") && !u.pathname.includes("..")) {
     serveArvysAsset(res, u.pathname.slice("/arvys-icons/".length));
     return;
@@ -952,7 +1011,15 @@ const appHandler = (req, res) => {
           let body = Buffer.concat(chunks).toString("utf8");
           if (isHtml) {
             outHeaders["permissions-policy"] = "microphone=*, camera=(), geolocation=()";
+            body = body.replace(/href="\/icons\/prod\/favicon\.ico"/g, 'href="/favicon.ico"');
+            body = body.replace(/href="\/icons\/prod\/apple-touch-icon\.png"/g, 'href="/apple-touch-icon.png"');
+            body = body.replace(/href="\/site\.webmanifest"/g, 'href="/manifest.json"');
+            body = body.replace(/href="\/icons\/dev\/favicon\.ico"/g, 'href="/favicon.ico"');
+            body = body.replace(/href="\/icons\/dev\/apple-touch-icon\.png"/g, 'href="/apple-touch-icon.png"');
+            body = body.replace(/content="\/social-share\.png"/g, 'content="/icon-512.png"');
             const pwaTags = [
+              '<link rel="icon" type="image/x-icon" href="/favicon.ico">',
+              '<link rel="icon" type="image/svg+xml" href="/icon.svg">',
               '<link rel="manifest" href="/manifest.json">',
               '<meta name="theme-color" content="#0d0d0d">',
               '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
