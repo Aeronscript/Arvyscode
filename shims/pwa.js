@@ -187,7 +187,9 @@
       ".arvys-confirm-delete { flex:1;background:var(--v2-state-fg-danger,#dc2626);border:none;color:#fff;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s }",
       ".arvys-confirm-delete:hover { background:#ef4444 }",
       // Fix 1 Upstream PR #53816 : Full tool error text & no truncation
-      "[data-component*='error'], [class*='error'], [class*='tool-error'], [data-slot*='error'] { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: break-word !important; max-height: none !important; }"
+      "[data-component*='error'], [class*='error'], [class*='tool-error'], [data-slot*='error'] { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: break-word !important; max-height: none !important; }",
+      // Fix 2 Upstream PR #51781 : Allow touch scrolling in directory picker and modal lists
+      "[role='dialog'], [data-component*='picker'], [data-component*='select'], [class*='overflow-y'], [class*='overflow-auto'] { -webkit-overflow-scrolling: touch !important; touch-action: pan-y !important; }"
     ].join("\n");
     document.head.appendChild(style);
 
@@ -665,5 +667,21 @@
       }
     }, true);
     setInterval(expandToolErrors, 2000);
+
+    // -------------------------------------------------------------------------
+    // 8. Fix 2 Upstream PR #51781 : Allow touch scrolling in directory picker
+    // -------------------------------------------------------------------------
+    function enableTouchScrolling() {
+      document.querySelectorAll('[data-component*="picker"], [data-component*="select"], [role="dialog"] div, .overflow-y-auto, .overflow-auto').forEach(function (el) {
+        if (el && el.style) {
+          el.style.webkitOverflowScrolling = "touch";
+          el.style.touchAction = "pan-y";
+        }
+      });
+    }
+    document.addEventListener("touchstart", function () {
+      enableTouchScrolling();
+    }, { passive: true });
+    setInterval(enableTouchScrolling, 3000);
   });
 })();
