@@ -800,21 +800,26 @@
 
     function injectImportButton() {
       var modal = document.querySelector('[role="dialog"], .dialog-content, div[class*="dialog"]');
-      if (modal && !modal.querySelector("#arvys-import-icon-btn")) {
-        var pathInput = modal.querySelector('input[type="text"], input:not([type])');
-        if (pathInput) {
+      if (modal && !modal.querySelector("#arvys-import-footer-btn")) {
+        var footer = modal.querySelector('footer, div[class*="footer"], div[class*="actions"], div[class*="buttons"]');
+        if (footer) {
           var btn = document.createElement("button");
-          btn.id = "arvys-import-icon-btn";
+          btn.id = "arvys-import-footer-btn";
           btn.type = "button";
           btn.title = "Importer un dossier depuis mon appareil";
-          btn.style.cssText = "display:inline-flex;align-items:center;gap:6px;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#ffffff);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;margin-top:8px;margin-bottom:6px;align-self:flex-start;transition:all .15s;";
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> <span>Importer un dossier</span>';
+          btn.style.cssText = "display:inline-flex;align-items:center;gap:6px;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#ffffff);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;margin-right:auto;flex-shrink:0;transition:all .15s;";
+          btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg> <span>Importer un dossier</span>';
           btn.onmouseover = function() { btn.style.background = "var(--v2-overlay-simple-overlay-hover,#1f2231)"; btn.style.borderColor = "var(--v2-border-border-strong,#3b3f54)"; };
           btn.onmouseout = function() { btn.style.background = "var(--v2-background-bg-layer-02,#171923)"; btn.style.borderColor = "var(--v2-border-border-base,#232635)"; };
           btn.onclick = function () {
             importInput.click();
           };
-          pathInput.parentElement.insertAdjacentElement("afterend", btn);
+          if (window.getComputedStyle(footer).display !== "flex") {
+            footer.style.display = "flex";
+            footer.style.alignItems = "center";
+            footer.style.justifyContent = "space-between";
+          }
+          footer.insertBefore(btn, footer.firstChild);
         }
       }
     }
