@@ -801,21 +801,28 @@
     function injectImportButton() {
       var modal = document.querySelector('[role="dialog"], .dialog-content, div[class*="dialog"]');
       if (modal && !modal.querySelector("#arvys-import-btn")) {
-        var actions = modal.querySelector('footer, div[class*="footer"], div[class*="actions"], div[class*="buttons"]');
-        if (actions) {
+        var container = modal.querySelector('input[type="text"], input:not([type]), div[class*="content"], div[class*="body"]');
+        if (container) {
+          var parentBox = container.closest('div[class*="content"], div[class*="body"], div[class*="dialog"]') || modal;
           var btn = document.createElement("button");
           btn.id = "arvys-import-btn";
           btn.type = "button";
-          btn.className = "arvys-help-action-btn";
-          btn.style.cssText = "background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:#fff;padding:6px 12px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:12px;";
-          btn.innerHTML = '📁 Importer un dossier';
+          btn.style.cssText = "background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;padding:11px 18px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:13.5px;border:none;width:100%;margin-bottom:14px;box-shadow:0 4px 14px rgba(59,130,246,0.35);transition:transform .15s;";
+          btn.innerHTML = '📁 Importer un dossier depuis mon appareil';
+          btn.onmouseover = function() { btn.style.transform = "translateY(-1px)"; };
+          btn.onmouseout = function() { btn.style.transform = "none"; };
           btn.onclick = function () {
             importInput.click();
           };
-          actions.insertBefore(btn, actions.firstChild);
+          var firstChild = parentBox.firstElementChild;
+          if (firstChild) {
+            parentBox.insertBefore(btn, firstChild);
+          } else {
+            parentBox.appendChild(btn);
+          }
         }
       }
     }
-    setInterval(injectImportButton, 600);
+    setInterval(injectImportButton, 300);
   });
 })();
