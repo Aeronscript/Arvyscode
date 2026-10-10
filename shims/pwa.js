@@ -185,7 +185,9 @@
       ".arvys-confirm-cancel { flex:1;background:var(--v2-background-bg-layer-02,#171923);border:1px solid var(--v2-border-border-base,#232635);color:var(--v2-text-text-base,#ffffff);padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500;transition:background .15s }",
       ".arvys-confirm-cancel:hover { background:var(--v2-overlay-simple-overlay-hover,#1f2231) }",
       ".arvys-confirm-delete { flex:1;background:var(--v2-state-fg-danger,#dc2626);border:none;color:#fff;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;transition:background .15s }",
-      ".arvys-confirm-delete:hover { background:#ef4444 }"
+      ".arvys-confirm-delete:hover { background:#ef4444 }",
+      // Fix 1 Upstream PR #53816 : Full tool error text & no truncation
+      "[data-component*='error'], [class*='error'], [class*='tool-error'], [data-slot*='error'] { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: break-word !important; max-height: none !important; }"
     ].join("\n");
     document.head.appendChild(style);
 
@@ -643,5 +645,25 @@
     }
     enforceArvysLogos();
     setInterval(enforceArvysLogos, 1200);
+
+    // -------------------------------------------------------------------------
+    // 7. Fix 1 Upstream PR #53816 : Affichage intégral du texte des erreurs d'outils
+    // -------------------------------------------------------------------------
+    function expandToolErrors() {
+      document.querySelectorAll('[data-component*="error"], [class*="error"], [class*="tool-error"]').forEach(function (el) {
+        if (el.style) {
+          el.style.maxHeight = "none";
+          el.style.whiteSpace = "pre-wrap";
+          el.style.wordBreak = "break-word";
+        }
+      });
+    }
+    document.addEventListener("click", function (e) {
+      var t = e.target.closest ? e.target.closest('[data-component*="error"], [class*="error"], [class*="tool-error"], button') : null;
+      if (t) {
+        setTimeout(expandToolErrors, 50);
+      }
+    }, true);
+    setInterval(expandToolErrors, 2000);
   });
 })();
